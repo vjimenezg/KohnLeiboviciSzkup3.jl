@@ -1,0 +1,13 @@
+name = "KohnLeiboviciSzkup3"
+uuid = "d7efd680-184a-406a-ba68-cf600e8bb63d"
+authors = ["Vicente Jimenez G. <vjimenezgimpel@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
