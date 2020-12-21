@@ -17,10 +17,13 @@ using Interpolations, QuadGK # integration
 using NLsolve # root-finding
 using NamedTupleTools, Parameters # named tuples
 using Roots
+using QuantEcon
+using Base
 
 # Model files
 
-include("parameters.jl")
+include("parameters_settings.jl")
+include("utils.jl")
 
 
 end
