@@ -3,10 +3,10 @@
 
 
 ##################### Directory settings #####################
-    results=@with_kw(dir = pwd(),
+    results=@with_kw (dir = pwd(),
     dir_results = string(results,"/","results", "/"))
 ##################### Tariff Income #####################
-    t_inc=@with_kw(tariffsincome = 1, # = 0 if don't give tariffs income back
+    t_inc=@with_kw (tariffsincome = 1, # = 0 if don't give tariffs income back
                              # = 1 give tariffs income back (we need additional
                              # guess)
     tariffsincome_PE_flag=1,
@@ -168,7 +168,7 @@ Yfv=Yfv,
 
 ##################### Solution Options #####################
 
-s_op=@with_kw(
+s_op=@with_kw (
 #Productivity
     z_grid_size = 200, # #100; #75; #250; #Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; #Curvature parameter to control distance across grid points
@@ -192,16 +192,16 @@ s_op=@with_kw(
 
 #Optimizer options
      MaxFunEvalsTrans = 8000,
-     MaxIter = 15,
+     MaxIter = 15)
 
-# This has to be translated to the Julia optimizer [PENDING]
+     op_GE =@with_kw (method=:trustregion,xtol=1E-7,ftol=1E-8,show_trace=true)
 
-     options_GE = optimset('Display','iter','TolX',1e-7,'TolFun',1e-8,'Algorithm','levenberg-marquardt', 'Scaleproblem','Jacobian','UseParallel',true,'FinDiffRelStep',0.001,'FinDiffType','central'),
+     # This has to be translated to NLsolve options [PENDING]
      options_trans = optimoptions('fsolve','Display','iter','StepTolerance',1e-7,'FunctionTolerance',1e-7,'MaxFunctionEvaluations',s.MaxFunEvalsTrans,'MaxIterations',s.MaxIter,...
      'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
-     ,'ScaleProblem','jacobian','UseParallel',true))
+     ,'ScaleProblem','jacobian','UseParallel',true)
 
-     ## Simulation by generating sequence of shocks (if s.flag_simulate==1)
+     ## [This is not translated, copy/paste from Matlab] Simulation by generating sequence of shocks (if s.flag_simulate==1)
 
      # if ad_opt.flag_simulate == 1
      #     #Simulations
@@ -214,19 +214,20 @@ s_op=@with_kw(
 
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################
 
-        #Productivity
         [log_z_grid, z_P, z_π] = tauchen(s_op.z_grid_size,4,p_dft.log_z_ρ,p_dft.log_z_σ,p_dft.log_z_μ,s_op.z_grid_power)
         z_grid = exp(log_z_grid');
         z_grid_original = exp(log_z_grid');
 
-        #Productivity process statistics
-        z_min = min(z_grid);
-        z_max = max(z_grid);
-        z_mean = sum(z_grid.*z_pi);
-        z = ones(a_grid_size,1)*z_grid';
-
-        #Asset grid
-        a_grid = LinRange(0,1,a_grid_size);
-        a_grid = a_grid.^a_grid_power;
-        a_grid = a_grid.*(a_grid_ub-a_grid_lb) + a_grid_lb;
-        a_grid_vec = repmat(a_grid,length(a_grid),1);
+        grids=@with_kw (log_z_grid=log_z_grid, #Productivity
+        z_P=z_P,
+        z_π=z_π,
+        z_grid=exp(log_z_grid'),
+        z_grid_original=exp(log_z_grid'),
+        z_min=min(z_grid), #Productivity process statistics
+        z_max = max(z_grid),
+        z_mean = sum(z_grid.*z_π),
+        z = ones(s_op.a_grid_size,1)*z_grid',
+        a_grid = LinRange(0,1,s_op.a_grid_size), #Asset grid
+        a_grid = a_grid.^s_op.a_grid_power,
+        a_grid = a_grid.*(s_op.a_grid_ub-s_op.a_grid_lb) + s_op.a_grid_lb,
+        a_grid_vec = repeat(a_grid,1,length(a_grid)))
