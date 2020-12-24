@@ -3,19 +3,19 @@
 
 
 ##################### Directory settings #####################
-    results=@with_kw (dir = pwd(),
-    dir_results = string(results,"/","results", "/"))
+    results=(dir = pwd(),
+    dir_results = string(dir,"/","results", "/"))
 ##################### Tariff Income #####################
-    t_inc=@with_kw (tariffsincome = 1, # = 0 if don't give tariffs income back
+    s=(tariffsincome = 1, # = 0 if don't give tariffs income back
                              # = 1 give tariffs income back (we need additional
                              # guess)
     tariffsincome_PE_flag=1,
     tariffsincome_PE = 0)
 
 ##################### Steady State in GE? #####################
-    ge=@with_kw (GE =1, # =0 if partial equilibrium (inital SS)
+    s=merge((GE =1, # =0 if partial equilibrium (inital SS)
                   # =1 if general equilibrium (initial SS)
-        GE_end = 1) # =0 if partial equilibrium (final SS)
+        GE_end = 1),s) # =0 if partial equilibrium (final SS)
                       # =1 if general equilibrium (final SS)
 
 ##################### Additional Options #####################
@@ -23,7 +23,7 @@
 #Denomination of fixed costs (includes sunk costs)
 # =0 if fixed costs denominated in units of labor
 # =1 if fixed costs denominated in units of the final good
-    ad_opt=@with_kw (fcost_fgoods = 0,
+    s=merge((fcost_fgoods = 0,
 
 # Simulation
     flag_simulate = 0, # flag_simulate = 0, simulates by iterating on measure of firms,
@@ -37,12 +37,12 @@
     welfare = 1, # Experiments
     save_workspace = 1, # Saving options
     save_prices = 1,
-    load_prices = 0) # load prices
+    load_prices = 0),s) # load prices
 
 
 ##################### Baseline Parameters #####################
 
-p_dft = @with_kw (θ = 0.20541136, #Collateral constraint
+m= (θ = 0.20541136, #Collateral constraint
     F_base = 0.46563816, #Fixed export cost
     log_z_σ = 0.15652825, #Standard deviation of log-normal productivity distribution
 α_m=0.5,
@@ -68,107 +68,79 @@ Pm_k = 1.0,
 r = 0.06,
 tariffsincome = 0.0,
 log_z_ρ = 0.9, #13.69641182/14.69641182, #Persistence
-log_z_μ = log(z_mean)-(log_z_σ^2)*(1/((1-log_z_ρ^2)))*(1/2)) #Normalize average productivity to 1, log_z_mu is the mean of log_z
+log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/((1-m.log_z_ρ^2)))*(1/2)) #Normalize average productivity to 1, log_z_mu is the mean of log_z
 
 
 ##################### Transition Settings #####################
 
-m=parameter_defaults()
-N=60 #length of transition
+s=merge((N=60,),s) #length of transition
 
 #Shock to collateral constraint
 θ_old = m.θ;
 θ_new = m.θ;
-θ_v = ones(N,1);
-θ_v[1:2] = θ_old;
-θ_v[3:end] = θ_new;
+m=merge((θ_v = vcat(θ_old*ones(2,1),θ_new*ones(N-2,1)),),m)
 
 #Real interest rate shock
 r_old = m.r;
 r_new = m.r;
-rv = zeros(N,1);
-rv[1:2] = r_old;
-rv[3:end] = r_new;
+m=merge((rv = vcat(r_old*ones(2,1),r_new*ones(N-2,1)),),m)
+
 
 # Beta shock
 β_old = m.β;
 β_new = m.β;
-β_v = zeros(N,1);
-β_v[1] = β_old;
-β_v[2:end] = β_new;
+m=merge((β_v = vcat(β_old,β_new*ones(N-1,1)),),m)
+
 
 # delta shock
 δ_old = m.δ;
 δ_new = m.δ;
-δ_v = zeros(N,1);
-δ_v[1] = δ_old;
-δ_v[2:end] = δ_new;
+m=merge((δ_v = vcat(δ_old,δ_new*ones(N-1,1)),),m)
 
 # Foreign CPI shock
 Pf_old = m.Pf;
 Pf_new = m.Pf;
-Pfv = zeros(N,1);
-Pfv[1] = Pf_old;
-Pfv[2:end] = Pf_new;
+m=merge((Pfv = vcat(Pf_old,Pf_new*ones(N-1,1)),),m)
+
 
 #Shock to pm
 # pm_old = m.Pm;
 # pm_new = m.Pm;
-# pm_v = zeros(N,1);
-# pm_v[1] = pm_old;
-# pm_v[2:end] = pm_new;
+# m=merge((pm_v = vcat(pm_old,pm_new*ones(N-1,1)),),m)
 
 # Foreign output shock
 # Negative shock -> devaluation
 # Positive shock -> apreciation
 Yf_old = m.Yf;
 Yf_new = m.Yf;
-Yfv = zeros(N,1);
-Yfv[1] = Yf_old;
-Yfv[2:end] = Yf_new;
+m=merge((Yfv = vcat(Yf_old,Yf_new*ones(N-1,1)),),m)
+
 
 #Shock to iceberg costs
 τ_old = m.τ;
 τ_new = 1*m.τ;
-τ_v = zeros(N,1);
-τ_v[1:2] = τ_old;
-τ_v[3:end] = τ_new;
+m=merge((τ_v = vcat(τ_old*ones(2,1),τ_new*ones(N-2,1)),),m)
+
 
 #Shocks to tariffs
 τ_m_c_old = m.τ_m_c;
 τ_m_c_new = 0.375*m.τ_m_c;
-τ_m_c_v = zeros(N,1);
-τ_m_c_v[1] = τ_m_c_old;
-τ_m_c_v[2:end] = τ_m_c_new;
+m=merge((τ_m_c_v = vcat(τ_m_c_old,τ_m_c_new*ones(N-1,1)),),m)
+
 
 τ_m_k_old = m.τ_m_k;
 τ_m_k_new = 1*m.τ_m_k;
-τ_m_k_v = zeros(N,1);
-τ_m_k_v[1] = τ_m_k_old;
-τ_m_k_v[2:end] = τ_m_k_new;
+m=merge((τ_m_k_v = vcat(τ_m_k_old,τ_m_k_new*ones(N-1,1)),),m)
 
 
 τ_x_old = m.τ_x;
 τ_x_new = 1*m.τ_x;
-τ_x_v = zeros(N,1);
-τ_x_v[1] = τ_x_old;
-τ_x_v[2:end] = τ_x_new;
+m=merge((τ_x_v = vcat(τ_x_old,τ_x_new*ones(N-1,1)),),m)
 
-t_s = @with_kw (N=N,
-θ_v=θ_v,
-rv=rv,
-β_v=β_v,
-δ_v=δ_v,
-Pfv=Pfv,
-Yfv=Yfv,
-τ_v=τ_v,
-τ_m_c_v=τ_m_c_v,
-τ_m_k_v=τ_m_k_v,
-τ_x_v=τ_x_v)
 
 ##################### Solution Options #####################
 
-s_op=@with_kw (
+s=merge((
 #Productivity
     z_grid_size = 200, # #100; #75; #250; #Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; #Curvature parameter to control distance across grid points
@@ -192,16 +164,20 @@ s_op=@with_kw (
 
 #Optimizer options
      MaxFunEvalsTrans = 8000,
-     MaxIter = 15)
+     MaxIter = 15,
 
-     op_GE =@with_kw (method=:trustregion,xtol=1E-7,ftol=1E-8,show_trace=true)
+     method_GE=:trustregion,
+     xtol_GE=1E-7,
+     ftol_GE=1E-8,
+     show_trace_GE=true),s)
 
      # This has to be translated to NLsolve options [PENDING]
-     options_trans = optimoptions('fsolve','Display','iter','StepTolerance',1e-7,'FunctionTolerance',1e-7,'MaxFunctionEvaluations',s.MaxFunEvalsTrans,'MaxIterations',s.MaxIter,...
-     'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
-     ,'ScaleProblem','jacobian','UseParallel',true)
 
-     ## [This is not translated, copy/paste from Matlab] Simulation by generating sequence of shocks (if s.flag_simulate==1)
+    # options_trans = optimoptions('fsolve','Display','iter','StepTolerance',1e-7,'FunctionTolerance',1e-7,'MaxFunctionEvaluations',s.MaxFunEvalsTrans,'MaxIterations',s.MaxIter,...
+    # 'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
+    # ,'ScaleProblem','jacobian','UseParallel',true)
+
+     ## [This is not translated, copy/paste from Matlab, originally commented] Simulation by generating sequence of shocks (if s.flag_simulate==1)
 
      # if ad_opt.flag_simulate == 1
      #     #Simulations
@@ -214,20 +190,19 @@ s_op=@with_kw (
 
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################
 
-        [log_z_grid, z_P, z_π] = tauchen(s_op.z_grid_size,4,p_dft.log_z_ρ,p_dft.log_z_σ,p_dft.log_z_μ,s_op.z_grid_power)
-        z_grid = exp(log_z_grid');
-        z_grid_original = exp(log_z_grid');
+        #Productivity
+        r=(log_z_grid=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[1], z_P=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[2], z_π=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[3],
+        z_grid = exp(r.log_z_grid'),
+        z_grid_original = exp(r.log_z_grid'),
 
-        grids=@with_kw (log_z_grid=log_z_grid, #Productivity
-        z_P=z_P,
-        z_π=z_π,
-        z_grid=exp(log_z_grid'),
-        z_grid_original=exp(log_z_grid'),
-        z_min=min(z_grid), #Productivity process statistics
-        z_max = max(z_grid),
-        z_mean = sum(z_grid.*z_π),
-        z = ones(s_op.a_grid_size,1)*z_grid',
-        a_grid = LinRange(0,1,s_op.a_grid_size), #Asset grid
-        a_grid = a_grid.^s_op.a_grid_power,
-        a_grid = a_grid.*(s_op.a_grid_ub-s_op.a_grid_lb) + s_op.a_grid_lb,
-        a_grid_vec = repeat(a_grid,1,length(a_grid)))
+        #Productivity process statistics
+        z_min=min(r.z_grid),
+        z_max = max(r.z_grid),
+        z_mean = sum(r.z_grid.*r.z_π),
+        z = ones(s.a_grid_size,1)*r.z_grid',
+
+        #Asset grid
+        a_grid = LinRange(0,1,s.a_grid_size), #Asset grid
+        a_grid = r.a_grid.^s.a_grid_power,
+        a_grid = r.a_grid.*(s.a_grid_ub-s.a_grid_lb) + s.a_grid_lb,
+        a_grid_vec = repeat(r.a_grid,1,length(r.a_grid)))

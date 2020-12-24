@@ -23,50 +23,49 @@ using Base
 
 include("parameters_settings.jl")
 include("utils.jl")
+include("GE_functions.jl")
 
 #Step 1: Solve initial steady state
 
-    if t_inc.tariffsincome == 1
-        if ad_opt.load_prices ==0
-            p_ext=@with_kw (w= 0.021645899110592,
+    if s.tariffsincome == 1
+        if s.load_prices ==0
+            m=merge((w= 0.021645899110592,
             Yc = 0.075394893630123,
             ξ = 0.280906535178547,
             Pk = 0.969892818482190,
-            Yk = 0.065988921968899)
-        elseif ad_opt.load_prices ==1
+            Yk = 0.065988921968899),m)
+        elseif s.load_prices ==1
             Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
-            p_ext=@with_kw (w = Prices(2,1)),
+            m=merge((w = Prices(2,1),
             Yc = Prices(1,1),
             ξ = Prices(3,1),
             Pk = Prices(4,1),
-            Yk = Prices(5,1))
+            Yk = Prices(5,1)),m)
         end
-        x0 = [p_ext.w p_ext.Yc p_ext.ξ p_ext.Pk p_ext.Yk];
+        x0 = [m.w m.Yc m.ξ m.Pk m.Yk]
 
     else
 
-        if ad_opt.load_prices ==0
-            p_ext=@with_kw (w = 0.035690209553739,
+        if s.load_prices ==0
+            m=merge((w = 0.035690209553739,
             Φ_h = 0.16403,
             ξ =0.369060692554216,
-            Pk = 0.975043532756500)
-        elseif ad_opt.load_prices ==1
+            Pk = 0.975043532756500),m)
+        elseif s.load_prices ==1
             Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
-            p_ext=@with_kw (w = Prices(2,1),
+            m=merge((w = Prices(2,1),
             Φ_h = Prices(1,1),
             ξ = Prices(3,1),
-            Pk = Prices(4,1))
+            Pk = Prices(4,1)),m)
         end
-        x0 = [p_ext.w p_ext.Φ_h p_ext.ξ p_ext.Pk];
+        solver=(x0 = [m.w m.Φ_h m.ξ m.Pk],)
 
     end
-# Didn't recover fval nor exitflag, not sure if this is a problem [see https://github.com/JuliaNLSolvers/NLsolve.jl/blob/master/src/nlsolve/solver_state_results.jl]
 
-    if ge.GE == 1
+    if s.GE == 1
         results_GE =
-         nlsolve((F,x) ->KLS3_GE_par(F,x,),log(x0),autodiff = :forward, method=op_GE.method, xtol=op_GE.xtol, ftol=op_GE.ftol, show_traceop_GE.show_trace)
-        solver=@with_kw (x0=x0,
-        z=results_GE.zero)
+         nlsolve((F,x) ->KLS3_GE_par(F,x,),log(x0),autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+        solver=merge((z=results_GE.zero,),solver)
 
 #From here onwards pending
         [solver.mcc_0, m_0, r_0, s_0, sim_0] = KLS3_GE_par(solver.z,m,s,r);
