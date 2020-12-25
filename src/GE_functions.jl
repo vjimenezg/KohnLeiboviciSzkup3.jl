@@ -1,14 +1,70 @@
     #########################################
-    # Static problem for firm/entrepreneur
+    # Measure, Static Problem, Dynamic Problem, Simulation, GE Par #
     #########################################
 
-    # Specification:
-    # One production function with materials
-    # No working capital constraint
-    # Derivations available at Model_Dec2018.tex
+
+############################# Measure ###########################
+
+    function KLS3_measure(s,r,guessM)
+
+    ## Computational objects
+    numZ = length(r.z_grid)
+    numA = length(r.a_grid)
+
+    #Productivity
+    #pi = r.z_pi
+    P = r.z_P
+
+    ##
+    # Mnew = zeros(numA,numZ)
+    # Mnew[1,:] = pi'
+    Mnew=guessM
+
+    # Only valid with value function iteration
+    ap_ind = r.ap_ind
+
+    iter = 0
+    diff_M = 1
 
 
-    function KLS3_staticproblem(m,s,r)
+    while diff_M>s.eps_sm
+
+        Mold = Mnew
+        Mnew = zeros(numA,numZ)
+
+        #for i=1:numA #Old asset state
+
+        for j=1:numZ #Old productivity state
+            PP=P[j,:]
+
+            #aa_v=ap_ind[:,j]
+            for i=1:numA #Old asset state
+                #aa=ap_ind[i,j]
+                #aa=aa_v[i]
+                Mnew[ap_ind[i,j],:] = Mnew[ap_ind[i,j],:] + Mold[i,j]*PP
+            end
+        end
+
+        diff_M = sum(abs.(Mnew-Mold));         # new criterion
+
+        iter = iter + 1
+
+    end
+
+    measure = Mnew
+
+
+    return measure
+    end
+
+
+############################# Static Problem ########################
+
+# One production function with materials
+# No working capital constraint
+# Derivations available at Model_Dec2018.tex
+
+function KLS3_staticproblem(m,s,r)
 
     ## Useful objects
 
@@ -171,10 +227,382 @@
     #    r.k_x_u = [];   r.n_x_u = []; r.m_x_u = []; r.yd_x_u = []; r.yf_x_u = []; r.pd_x_u = []; r.pf_x_u = [];
     #    r.n_nx_c = []; r.m_nx_c = []; r.yd_nx_c = []; r.yf_nx_c = []; r.pd_nx_c = []; r.pf_nx_c = [];
     #    r.k_nx_u = []; r.n_nx_u = []; r.m_nx_u = []; r.yd_nx_u = []; r.yf_nx_u = []; r.pd_nx_u = []; r.pf_nx_u = [];
-return r
+    return r
 
+end
+############################# Dynamic Problem ########################
+
+function KLS3_dynamicproblem(m,s,r,guessV)
+
+    ## Dynamic problem: value functions and policy functions
+
+
+    #Initialize solution objects
+        v_new = guessV #r.pi_nx
+        ap = zeros(size(v_new))
+        ap_ind = zeros(size(v_new))
+
+
+        v_old = v_new
+        v_diff = 1
+        z_P=r.z_P
+        a_grid=r.a_grid
+        exponent=1-m.γ
+
+
+        #Value function iteration algorithm
+
+        profits = m.w + m.tariffsincome + r.e.*r.π_x + (1-r.e).*r.π_nx
+
+        iter = 0
+        while v_diff>s.eps
+
+            iter = iter + 1
+            v_p=v_old'
+
+            for j = 1:s.z_grid_size
+
+                v_pp = m.β*z_P[j,:]*v_p
+                for i = 1:s.a_grid_size
+
+                    c =  profits[i,j] + a_grid[i]*(1+m.r) - a_grid
+                    neg_c_indexes = c.<=0 #indices of a' for which consumption<0
+                    u = (c.^exponent)./exponent+ neg_c_indexes.*-1e50
+
+                    (v,index_ap) = findmax(u + v_pp)
+
+                    v_new[i,j] = v
+                    ap_ind[i,j]=index_ap
+
+                end
+            end
+
+            ap = a_grid[ap_ind],
+
+            # Accelerator
+
+            # Consumption and utility
+            c = profits + r.a_grid'*ones(1,s.z_grid_size).*(1+m.r) - ap  # The key is ap(:,:), the optimal asset choice
+
+            u = ((c).^(1-m.γ))./(1-m.γ)
+
+            for g=1:s.ac_iter
+                for j = 1:s.z_grid_size
+                   v_new[:,j] = u[:,j] + (m.β*z_P[j,:]*v_new[ap_ind[:,j],:]')'
+
+                end
+
+
+            end
+
+            # Convergence
+            v_diff = maximum(abs(v_new-v_old))
+            v_old = v_new
+
+            if mod(iter,100)==0
+                show("Delta V: $v_diff")
+            end
+
+        end
+
+
+
+    #Store output from value function iteration
+        r=merge((v = v_new,
+        ap = ap,
+        ap_ind = ap_ind,
+        c = c),r)
+
+    ## Store output to be used in simulation
+
+        r=merge((pd = (1-r.e).*r.pd_nx + r.e.*r.pd_x,
+        yd = (1-r.e).*r.yd_nx + r.e.*r.yd_x,
+        pf = r.e.*r.pf_x,
+        yf =r.e.*r.yf_x,
+        k = (1-r.e).*r.k_nx + r.e.*r.k_x,
+        n = (1-r.e).*r.n_nx + r.e.*r.n_x,
+        m = (1-r.e).*r.m_nx + r.e.*r.m_x),r)
+
+        # r.pd_nx = []; r.pd_x = []; r.yd_nx=[];  r.yd_x=[]; r.pf_x=[]; r.yf_x=[];
+        # r.k_nx =[]; r.k_x = []; r.n_nx=[]; r.n_x=[]; r.m_nx=[]; r.m_x=[];
+
+        r=merge((pi = (1-r.e).*r.pi_nx + r.e.*r.pi_x,
+        a = r.a_grid_mat,
+
+        #Fixed costs
+        S_mat = r.e*m.F,
+        F_mat = r.e*m.F),r)
+
+    return r
+end
+
+ ############################## Simulation ##########################
+function KLS3_simulate(m,s,r,guessM)
+
+
+    # Compute stationary measure across states
+
+     #guess= ;
+
+
+#      if exist('sim.measure','var')
+#
+#          guessM=sim.measure;
+#
+#      else
+#
+#         guessM=Mnew;
+#
+#      end
+
+     #sim.measure = KLS3_measure(s,r,guessM);
+    sim=(measure=KLS3_measure(s,r,guessM),
+
+
+    w=m.w,
+    ξ=m.ξ,
+
+    # Exporters and non-exporters
+    mass_x = sum(sim.measure.*r.e),
+    share_x=sim.mass_x # share of exporters as a fraction of all entrepreneurs
+    mass_d = sum(sim.measure.*(1-r.e)), #Mass of tradable producers who are non-exporters
+
+    # Capital good
+
+    I = m.δ*sum(sim.measure.*r.k),
+    M = sum(sim.measure.*r.m))
+
+    yd_k = ((r.pd/(m.Pk*m.ω_h_k)).^(-m.σ)) * (sim.I + sim.M)
+    ym_k = ((sim.ξ*m.Pm_k*(1+m.τ_m_k)/(m.Pk*m.ω_m_k)).^(-m.σ)) * (sim.I + sim.M)
+
+    sim=merge((Yk = (sum(sim.measure.*m.ω_h_k.*(yd_k.^((m.σ-1)/m.σ)) ) + m.ω_m_k*(ym_k.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1)),
+    Pk = (sum(sim.measure.*(m.ω_h_k^m.σ).*(r.pd.^(1-m.σ))) + (m.ω_m_k^m.σ)*((sim.ξ*m.Pm_k*(1+m.τ_m_k)).^(1-m.σ)) )^(1/(1-m.σ)),
+
+    # Consumption good
+
+    C = sum(sim.measure.*r.c)),sim)
+
+    #yd_c = ((r.pd/m.ω_h_c).^(-m.σ)) * sim.C
+    yd_c = max(r.yd - yd_k,0.00001)
+    ym_c = ((sim.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c).^(-m.σ)) * sim.C
+
+    sim=merge((Yc = (sum(sim.measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ))) + m.ω_m_c*(ym_c.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1)),
+
+
+    # Phi_h
+
+    ϕ_h = (m.ω_h_c^m.σ)*sim.Yc + ((m.ω_h_k*m.Pk)^m.σ)*sim.Yk,
+
+    ### Compute price and quantity indexes
+
+    #Domestic sales in units of final goods
+     PdYd =sum(sim.measure[r.pd.>0].*r.pd[r.pd.>0].*r.yd[r.pd.>0]),
+
+     #Exports
+     PxYx = sim.ξ*sum(sim.measure[r.pf.>0].*r.pf[r.pf.>0].*r.yf[r.pf.>0]),
+     PxYx_USD = sim.PxYx/sim.ξ,
+
+     #Imports
+    PmcYmc = sim.ξ*(1+m.τ_m_c)*m.Pm_c*ym_c,
+    PmkYmk =  sim.ξ*(1+m.τ_m_k)*m.Pm_k*ym_k,
+    PmYm = sim.PmcYmc + sim.PmkYmk,
+
+    # Tariffs Income (T)
+    tariffsincome=sim.ξ*m.τ_m_c*m.Pm_c*ym_c + sim.ξ*m.τ_m_k*m.Pm_k*ym_k,
+
+    ### Compute aggregate variables needed to evaluate market clearing conditions
+
+    #Labor and capital
+    K = sum(sim.measure.*(r.k)), #recall that already multiplied by oc_choice and sec_choice
+    inv_agg = m.δ*sim.K,
+    N = sum(sim.measure.*(r.n)),  # total labor demand for production
+
+    # Fixed costs already corrected by sim.w if needed
+    FC =  sum(sim.measure.*r.e.*r.F_mat),
+
+    # Total labor demand
+    N = sim.N+((sim.FC)/sim.w)*(1-s.fcost_fgoods),
+
+
+    ### Market clearing conditions
+
+    #Labor
+    n_supply = 1,
+    n_demand = sim.N,
+    #mc_n = ((1+sim.n_demand)/(1+sim.n_supply))-1, #10*log.((1+sim.n_demand)/(1+sim.n_supply)),
+    mc_n = log.(sim.n_demand/sim.n_supply),
+
+    #Assets
+    #This market clearing condition is the result of reformulating the debt market clearing condition
+    #In the original model, the sum of debt has to equal zero. Once the model is reformulated, this condition becomes the one below.
+    a_supply = sum(sim.measure.*r.a_grid_mat),
+    a_demand = sim.K,
+    #mc_a = ((1+sim.a_demand)/(1+sim.a_supply)) - 1, #10*log.((1+sim.a_demand)/(1+sim.a_supply)),
+    mc_a = log.(sim.a_demand/sim.a_supply),
+
+    #Final goods
+    #mc_y = ((1+sim.y_demand)/(1+sim.y_supply))-1, #10*log.((1+sim.y_demand)/(1+sim.y_supply)),
+    y_supply = sim.Yc,
+    y_demand = sim.C,
+    mc_y = log.(sim.y_demand/sim.y_supply),
+
+    k_supply = sim.Yk,
+    k_demand = sim.I + sim.M + sim.FC*s.fcost_fgoods,
+    mc_k = log.(sim.k_demand/sim.k_supply)),sim)
+
+
+
+    #Beliefs
+    #To solve the entrepreneur's problem, they need to have a belief about the aggregate price and quantity indexes in the market
+    #In equilibrium, these beliefs need to be consistent with the actual aggregate prices and quantities
+    #sim=merge((mc_y_belief = ((1+sim.ϕ_h)/(1+m.ϕ_h))-1,),sim)
+    #
+
+    if s.tariffsincome==1
+        sim=merge((mc_Yk_belief = log.(sim.Yk/m.Yk),
+        mc_tariffs_belief = log.(sim.tariffsincome/m.tariffsincome),
+        mc_y_belief = ((1+sim.Yc)/(1+m.Yc))-1),sim)
+
+    else
+        sim=merge((mc_Yk_belief = 0,
+        mc_tariffs_belief = 0,
+        mc_y_belief = log.(sim.ϕ_h/m.ϕ_h)),sim)
     end
 
+    ## Main statistics
+
+    sim=merge((Sales = sim.PdYd + sim.PxYx, #sim.PxYx is already denominated in units of the domestic final good
+    GDP = sim.Sales - sim.M*m.Pk, # Value Added
+    gross_output_ratio = (sim.ϕ_h)/(m.ξ*m.Yf),
+    gross_output_ratio_2 = (m.Yc+m.Pk*m.Yk)/(m.ξ*m.Yf),
+    gross_output_ratio_3 =     sim.GDP/(sim.ξ*m.Yf),
+
+    X_GDP = sim.PxYx/sim.GDP, # Exports, not value added exports
+    D_GDP = sim.PdYd/sim.GDP,
+
+    X_Sales = sim.PxYx/sim.Sales,
+    D_Sales = sim.PdYd/sim.Sales,
+
+    Absorption = sim.C+sim.I*sim.Pk,
+
+
+    NX_GDP = (sim.PxYx-sim.PmYm)/sim.GDP, #exports are pre-tax, imports include import tax
+    NX_Absorption = (sim.PxYx-sim.PmYm)/sim.Absorption, #exports are pre-tax, imports include import tax
+    NX_Sales = (sim.PxYx-sim.PmYm)/sim.Sales,
+
+    X_D = sim.PxYx/sim.PdYd,
+
+    IM_Sales = sim.PmYm/sim.Sales,
+    IM_GDP = sim.PmYm/sim.GDP,
+    IM_Absorption = sim.PmYm/sim.Absorption,
+
+    Cimp_share = sim.PmcYmc/sim.PmYm,
+    Kimp_share = sim.PmkYmk/sim.PmYm,
+
+    Kimp_PkYk = sim.PmkYmk/(sim.Yk*sim.Pk),
+
+    Kimp_Sales = sim.PmkYmk/sim.Sales,
+    Kimp_GDP = sim.PmkYmk/sim.GDP,
+
+    CRatio = sim.C/(sim.C+sim.I*sim.Pk),
+    InvGDP=sim.inv_agg*sim.Pk/sim.GDP),sim)
+
+    # Every credit statistic
+    r=merge((d = (1+m.r)*(m.Pk*r.k - r.a),),r)
+    sim=merge((credit = sum(sim.measure.*max(r.d,0)), # only entrepreneurs/firms (for workers r.d is negative)
+    credit_gdp = sim.credit/sim.GDP,
+    d_agg = sum(sim.measure.*r.d), # for both firms and workers
+    NFA_GDP = -sim.d_agg/sim.GDP,
+
+    credit_sales = sim.credit/(sim.PdYd + sim.PxYx),
+
+    k_wagebill = m.Pk*sim.K/(sim.w*sim.n_supply)),sim)
+
+    sales_x =  sim.ξ*r.pf.*r.yf #r.pf is denominated in foreign currency, so we adjust it
+    sales_d = r.pd.*r.yd
+    sales = sales_d+sales_x
+    x_share = sales_x./sales
+
+    x_share_av =  NaNMath.sum(sim.measure.*r.e.* x_share) / sum(sim.measure.*r.e)
+    x_share_av[isnan.(x_share_av)].=1
+
+
+    SalesExporters = sum(sim.measure.*sales.*r.e)
+    x_share_wav =  NaNMath.sum(sim.measure.*r.e.*(sales./SalesExporters).*x_share)) / sum(sim.measure.*r.e.*(sales./SalesExporters))
+    x_share_wav[isnan.(x_share_wav)].=1
+
+    sim=merge((x_share_av=x_share_av,x_share_wav=x_share_wav),sim)
+
+    ln_sales = log.(sales)
+    ln_sales_d = log.(sales_d)
+    ln_sales_ind=map(!,isnan.(ln_sales))
+    ln_sales_d_ind=map(!,isnan.(ln_sales_d))
+
+    sim=merge((ln_sales_mean = sum(sim.measure(ln_sales_ind).* ln_sales(ln_sales_ind)),
+    ln_sales_sd = sqrt(sum(sim.measure(ln_sales_ind) .* (ln_sales(ln_sales_ind) - sim.ln_sales_mean).^2 )),
+
+    ln_sales_d_mean = sum(sim.measure(ln_sales_d_ind) .* ln_sales_d(ln_sales_d_ind)),
+    ln_sales_d_sd = sqrt(sum(sim.measure(ln_sales_d_ind) .* (ln_sales_d(ln_sales_d_ind) - sim.ln_sales_d_mean).^2))),sim)
+
+    sales_mean = sum(sim.measure.*sales)
+    sim=merge((sales_sd = sqrt(sum(sim.measure .* (sales - sales_mean).^2 )),),sim)
+
+    sales_d_mean = sum(sim.measure .*sales_d)
+    sim=merge((sales_d_sd = sqrt( sum(sim.measure .* (sales_d - sales_d_mean).^2 )),),sim)
+
+    sim=merge((sales_avg_nx = sum(sim.measure.*(1-r.e).*sales) / sum(sim.measure.*(1-r.e)),
+    labor_avg_nx = sum(sim.measure.*(1-r.e).*(r.n )) / sum(sim.measure.*(1-r.e)),
+    sales_d_avg_nx = sim.sales_avg_nx,
+
+    sales_avg_x = sum(sim.measure.*r.e.*sales)/ sum(sim.measure.*r.e),
+    labor_avg_x = ((sim.FC/sim.w)*(1-s.fcost_fgoods) + sum(sim.measure.*r.e.*(r.n))) / sum(sim.measure.*r.e),
+
+    # These include fixed costs
+    labor_tot = sim.N,  # total labor demand for production
+    labor_tot_x = (sim.FC/sim.w)*(1-s.fcost_fgoods)  + sum(sim.measure.*r.e.*(r.n)),
+    labor_tot_nx =  sum(sim.measure.*(1-r.e).*(r.n)),
+    labor_tot_w = sum(sim.measure),
+
+    labor_x_share = sim.labor_tot_x/sim.labor_tot,
+    labor_nx_share = sim.labor_tot_nx/sim.labor_tot,
+
+    sales_d_avg_x = sum(sim.measure.*r.e.*sales_d)/ sum(sim.measure.*r.e),
+
+    xpremium_sales = sim.sales_avg_x/sim.sales_avg_nx,
+    xpremium_labor = sim.labor_avg_x/sim.labor_avg_nx,
+
+    xpremium_sales_d = sim.sales_d_avg_x/sim.sales_d_avg_nx,
+
+    ln_sales_sd_mean = sim.ln_sales_sd /  sim.ln_sales_mean,
+    ln_sales_d_sd_mean = sim.ln_sales_d_sd /  sim.ln_sales_d_mean,
+    sales_sd_mean = sim.sales_sd /  sales_mean,
+    sales_d_sd_mean = sim.sales_d_sd /  sales_d_mean),sim)
+
+    labor_mean= sum(sim.measure.*(r.n+ (r.e.*r.F_mat./sim.w )*(1-s.fcost_fgoods)))
+    labor_sd=sqrt(sum(sim.measure.*( r.n+ (r.e.*r.F_mat./sim.w)*(1-s.fcost_fgoods) - labor_mean ).^2))
+    sim=merge((labor_sd_mean = labor_sd /  labor_mean,
+
+
+   # Average productivity
+    avg_productivity1 = ((sum(sim.measure.*(r.z_grid_mat).^(m.sigma-1)))/sum(sim.measure)).^(1/(m.σ - 1)),
+    avg_productivity2 =  sum(sim.measure.*sales.* r.z_grid_mat) / sum(sim.measure .* sales),
+    avg_productivity3 =  sum(sim.measure.*sales_d.* r.z_grid_mat) / sum(sim.measure .* sales_d),
+
+
+
+
+
+ ## Solution-related statistics
+
+# All
+ a_min_share = sum(sim.measure(1,:)),
+ a_max_share = sum(sim.measure(end,:))),sim)
+
+return sim, r, s
+
+end
+
+############################# GE_par #############################
 
 function KLS3_GE_par(x,m,s,r)
 
@@ -245,5 +673,54 @@ guessV = r.v
 end
 
 guessM=[r.z_π'; zeros(length(r.a_grid)-1,length(r.z_grid))]
+
+sim1,r1,s1 = KLS3_simulate(m,s,r,guessM),
+sim=merge(sim1,sim)
+r=merge(r1,r)
+s=merge(s1,s)
+
+guessM=sim.measure
+
+#Market clearing conditions
+    if s.tariffsincome==0
+        mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k]
+        sim=merge((mcc = mcc,),sim)
+    elseif s.tariffsincome==1
+        mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_Yk_belief]
+        #mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_tariffs_belief]
+        sim=merge((mcc = mcc,),sim)
+    end
+
+#Display
+if s.display==1
+
+        show("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
+        show(" ")
+
+        show("Share of exporters (all firms):  $(sim.share_x)")
+        show("Exporter domestic sales premium: $(sim.xpremium_sales_d)")
+        show("Credit/GDP: $(sim.credit_gdp)")
+        show("M/GDP: $(sim.IM_GDP)")
+        show("X-M/GDP:  $(sim.NX_GDP)")
+        show("PmcYmc/PmYm: $(sim.Cimp_share)")
+#         show("M/Absorption:  $(sim.IM_Absorption )")
+#         show("X-M/Absorption:  $(sim.NX_Absorption)")
+#         show("M/Sales:  $(sim.IM_Sales)")
+#         show("X-M/Sales:  $(sim.NX_Sales)")
+#         show("PmkYmk/PkYk:  $(sim.Kimp_PkYk )")
+#         show("PmkYmk/GDP:  $(sim.Kimp_GDP )")
+#         show("PmkYmk/Sales:  $(sim.Kimp_Sales )")
+#         show("PmcYmc/PmYm:  $(sim.Cimp_share )")
+#         show("PmkYmk/PmYm:  $(sim.Kimp_share )")
+#         show("X/GDP:  $(sim.X_GDP)")
+#         show("X/Sales:  $(sim.X_Sales)")
+#         show("Av. X intensity:  $(sim.x_share_av)")
+#         show("C/(C+I):  $(sim.CRatio )")
+#         show("Inv_GDP:  $(sim.InvGDP )")
+        show("Share of agents at highest a: $( sim.a_max_share)")
+
+ end
+
+return mcc, m, r, s, sim
 
 end

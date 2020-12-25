@@ -191,7 +191,10 @@ s=merge((
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################
 
         #Productivity
-        r=(log_z_grid=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[1], z_P=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[2], z_π=tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)[3],
+
+        log_z_grid,z_P,z_π =tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)
+
+        r=(log_z_grid=log_z_grid, z_P=z_P, z_π=z_π,
         z_grid = exp(r.log_z_grid'),
         z_grid_original = exp(r.log_z_grid'),
 

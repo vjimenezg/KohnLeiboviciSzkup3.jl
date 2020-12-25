@@ -19,6 +19,7 @@ using NamedTupleTools, Parameters # named tuples
 using Roots
 using QuantEcon
 using Base
+using NaNMath
 # Model files
 
 include("parameters_settings.jl")
@@ -64,7 +65,7 @@ include("GE_functions.jl")
 
     if s.GE == 1
         results_GE =
-         nlsolve((F,x) ->KLS3_GE_par(F,x,),log(x0),autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+         nlsolve((F,x) ->KLS3_GE_par(F,x,m,s,r),log(x0),autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
         solver=merge((z=results_GE.zero,),solver)
 
 #From here onwards pending
