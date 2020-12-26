@@ -602,7 +602,139 @@ return sim, r, s
 
 end
 
-############################# GE_par #############################
+############################# GE_par (2 versions, firs for using NLsolve [in-place function])#############################
+
+function KLS3_GE_par!(F,x,m,s,r)
+
+#### Aggregate prices and quantities ####
+
+#Guessed prices
+
+m=merge((w = exp(x[1]),
+Φ_h = exp(x[2]),
+ξ = exp(x[3]),
+Pk = exp(x[4]),
+
+Pk_lag = m.Pk),m)
+
+
+### Solution
+
+# Tariff income (initialized to 0)
+if s.tariffsincome == 1
+    m.Yk = exp(x[5])
+    m.Yc = exp(x[2])
+    m.Φ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk
+
+    #Yc =  (m.Φ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
+    Yc = m.Yc
+    ym_c = Yc*(m.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c)^(-m.σ)
+    ym_k = m.Yk*(m.Pk^m.σ)*(m.ξ*m.Pm_k*(1+m.τ_m_k)/m.ω_m_k)^(-m.σ)
+
+    if s.tariffsincome_PE==0
+        m.tariffsincome = m.τ_m_c*m.ξ*m.Pm_c*ym_c + m.τ_m_k*m.ξ*m.Pm_k*ym_k
+    end
+
+end
+
+#Display
+ if s.display==1
+     show("------------------------------------------------")
+     show("Guesses: Φ_h=$(m.Φ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
+ end
+
+
+ #Fixed costs
+ if s.fcost_fgoods==0 # If in units of labor
+     m.F     = m.w*m.F_base;
+  else
+     m.F     = m.F_base;
+ end
+
+ #Static problems for tradable and nontradable sectors
+     r =merge((KLS3_staticproblem(m,s,r),),r)
+
+
+# PENDING (PERSISTENT)
+# persistent guessV
+# if isempty(guessV)
+#    guessV=r.pi_nx;
+# end
+guessV=r.π_nx
+
+#Dynamic problem and simulation (No sunk costs)
+r=merge((KLS3_dynamicproblem(m,s,r,guessV),),r)
+guessV = r.v
+
+# PENDING (PERSISTENT)
+# persistent guessM
+# if isempty(guessM)
+#    guessM=[r.z_pi'; zeros(length(r.a_grid)-1,length(r.z_grid))]; #Initialize
+end
+
+guessM=[r.z_π'; zeros(length(r.a_grid)-1,length(r.z_grid))]
+
+sim1,r1,s1 = KLS3_simulate(m,s,r,guessM),
+sim=merge(sim1,sim)
+r=merge(r1,r)
+s=merge(s1,s)
+
+guessM=sim.measure
+
+#Market clearing conditions
+    if s.tariffsincome==0
+        F[1]=sim.mc_n
+        F[2]=sim.mc_y
+        F[3]=sim.mc_y_belief
+        F[4]=sim.mc_k
+        sim=merge((mcc = F,),sim)
+    elseif s.tariffsincome==1
+        F[1]=sim.mc_n
+        F[2]=sim.mc_y
+        F[3]=sim.mc_y_belief
+        F[4]=sim.mc_k
+        F[5]=sim.mc_Yk_belief
+        #F[1]=sim.mc_n
+        #F[2]=sim.mc_y
+        #F[3]=sim.mc_y_belief
+        #F[4]=sim.mc_k
+        #F[5]=sim.mc_tariffs_belief
+        sim=merge((mcc = F,),sim)
+    end
+
+#Display
+if s.display==1
+
+        show("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
+        show(" ")
+
+        show("Share of exporters (all firms):  $(sim.share_x)")
+        show("Exporter domestic sales premium: $(sim.xpremium_sales_d)")
+        show("Credit/GDP: $(sim.credit_gdp)")
+        show("M/GDP: $(sim.IM_GDP)")
+        show("X-M/GDP:  $(sim.NX_GDP)")
+        show("PmcYmc/PmYm: $(sim.Cimp_share)")
+#         show("M/Absorption:  $(sim.IM_Absorption )")
+#         show("X-M/Absorption:  $(sim.NX_Absorption)")
+#         show("M/Sales:  $(sim.IM_Sales)")
+#         show("X-M/Sales:  $(sim.NX_Sales)")
+#         show("PmkYmk/PkYk:  $(sim.Kimp_PkYk )")
+#         show("PmkYmk/GDP:  $(sim.Kimp_GDP )")
+#         show("PmkYmk/Sales:  $(sim.Kimp_Sales )")
+#         show("PmcYmc/PmYm:  $(sim.Cimp_share )")
+#         show("PmkYmk/PmYm:  $(sim.Kimp_share )")
+#         show("X/GDP:  $(sim.X_GDP)")
+#         show("X/Sales:  $(sim.X_Sales)")
+#         show("Av. X intensity:  $(sim.x_share_av)")
+#         show("C/(C+I):  $(sim.CRatio )")
+#         show("Inv_GDP:  $(sim.InvGDP )")
+        show("Share of agents at highest a: $( sim.a_max_share)")
+
+ end
+
+return mcc, m, r, s, sim
+
+end
 
 function KLS3_GE_par(x,m,s,r)
 
@@ -683,12 +815,12 @@ guessM=sim.measure
 
 #Market clearing conditions
     if s.tariffsincome==0
-        mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k]
+        mcc = [sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k]
         sim=merge((mcc = mcc,),sim)
     elseif s.tariffsincome==1
-        mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_Yk_belief]
-        #mcc=[sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_tariffs_belief]
-        sim=merge((mcc = mcc,),sim)
+        mcc = [sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_Yk_belief]
+        # mcc = [sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_tariffs_belief]
+        sim=merge((mcc = F,),sim)
     end
 
 #Display
