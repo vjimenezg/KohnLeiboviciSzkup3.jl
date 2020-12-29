@@ -154,7 +154,7 @@ include("functions.jl")
         Sales_Laspeyres = sum(sim_end.measure.*(r_0.pd.*r_end.yd + m_0.ξ.*r_0.pf.*r_end.yf)),
         GDP_Laspeyres = sum(sim_end.measure.*(r_0.pd.*r_end.yd + m_0.ξ*r_0.pf.*r_end.yf -r_end.m*m_0.Pk))),sim_end)
 
- ## STEP 3: guess sequence of aggregate prices for N period, with N sufficiently large
+ ## STEP 3: guess sequence of aggregate prices for N period, with N sufficiently large (this was in a separate script in matlab, KL3_trans_obj)
 
  # Store results from initial and final steady states [PENDING]
 
@@ -239,7 +239,7 @@ include("functions.jl")
          # solution
          solve_prices = @(Prices)KLS3_transition_vec2(Prices,m,r,s,rt); #Function that takes prices as inputs and market clearing values as output
 
-         ### PENDING FROM HERE ONWARDS, WORKING ON KLS3_transition_vect2 ###
+         ### FROM HERE ONWARDS PENDING, WORKING ON KLS3_transition_vect2 ###
          [Prices_sol, mcc_sol, exit_sol] = fsolve(solve_prices,Guess,s.options_trans)
          [mc, m, r, sim_fun, rt] = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
      else

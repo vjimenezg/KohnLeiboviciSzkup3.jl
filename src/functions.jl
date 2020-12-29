@@ -234,7 +234,7 @@ end
 
 function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
 
-## Useful objects
+### Useful objects
 
     #Assets
     r=merge((a_grid_mat = r.a_grid'*ones(1,s.z_grid_size),
@@ -253,7 +253,7 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     MC = (m.Pk/m.α_m )^m.α_m * (m.w /((1-m.α)*(1-m.α_m)))^((1-m.α)*(1-m.α_m))
 
 
-## Exporters
+### Exporters
 
     # useful constant
     const_μ_x = (1./r.z_grid_mat).^(1/(m.α.*(1-m.α_m))) .* 1./r.k_x .* ((m.σ-1)./(m.σ)).^m.σ .*(m.ϕ_h + (m.ξ/m.τ).^m.σ.*m.Yf.*m.τ.*(1+m.τ_x).^(-m.σ))
@@ -322,7 +322,7 @@ function KLS3_dynamicproblem(m,s,r,guessV)
     #Initialize solution objects
         v_new = guessV #r.pi_nx
         ap = zeros(size(v_new))
-        ap_ind = zeros(size(v_new))
+        ap_ind_float = zeros(size(v_new))
 
 
         v_old = v_new
@@ -347,30 +347,32 @@ function KLS3_dynamicproblem(m,s,r,guessV)
                 v_pp = m.β*z_P[j,:]*v_p
                 for i = 1:s.a_grid_size
 
-                    c =  profits[i,j] + a_grid[i]*(1+m.r) - a_grid
+                    c =  profits[i,j] .+ a_grid[i]*(1+m.r) .- a_grid
                     neg_c_indexes = c.<=0 #indices of a' for which consumption<0
                     u = (c.^exponent)./exponent+ neg_c_indexes.*-1e50
 
-                    (v,index_ap) = findmax(u + v_pp)
+                    v,index_ap = findmax(u .+ v_pp)
 
                     v_new[i,j] = v
-                    ap_ind[i,j]=index_ap
+                    ap_ind_float[i,j]=index_ap
 
                 end
             end
-
-            ap = a_grid[ap_ind],
+            ap_ind=convert(Array{Int64},ap_ind_float)
+            for j =1:s.z_grid_size
+                ap[:,j]=r.a_grid[ap_ind[:,j]]
+            end
 
             # Accelerator
 
             # Consumption and utility
-            c = profits + r.a_grid'*ones(1,s.z_grid_size).*(1+m.r) - ap  # The key is ap(:,:), the optimal asset choice
+            c = profits .+ r.a_grid' .*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
 
             u = ((c).^(1-m.γ))./(1-m.γ)
 
             for g=1:s.ac_iter
                 for j = 1:s.z_grid_size
-                   v_new[:,j] = u[:,j] + (m.β*z_P[j,:]*v_new[ap_ind[:,j],:]')'
+                   v_new[:,j] = u[:,j] .+ (m.β .* z_P[j,:] .*v_new[ap_ind[:,j],:]')'
 
                 end
 
@@ -938,189 +940,4 @@ if s.display==1
 
 return mcc, m, r, s, sim
 
-end
-############################# Transition Vec ########################
-
-
-function KLS3_transition_vec2(Guess,m,r,s,rt)
-
-
-    wguess = [m.wt[1] exp.(Guess[s.N-1:2*s.N-4]) m.wt[s.N]]
-    ξguess = [m.ξt[1] exp.(Guess[2*s.N-3:3*s.N-6]) m.ξt[s.N]]
-    Pkguess = [m.Pkt[1] exp.(Guess[3*s.N-5:4*s.N-8]) m.Pkt[s.N]]
-    r_initial = r
-
-    if s.tariffsincome == 1
-        Ycguess = [m.Yct[1] exp.(Guess[1:s.N-2]) m.Yct[s.N]]
-        Ykguess = [m.Ykt[1] exp.(Guess[4*s.N-7:5*s.N-10]) m.Ykt[s.N]]
-
-        ϕhguess= (m.ω_h_c.^m.σ).*Ycguess + ((m.ω_h_k.*Pkguess).^m.σ).*Ykguess
-
-
-    else
-        ϕhguess = [m.ϕht[1] exp.(Guess[1:s.N-2]) m.ϕht[s.N]]
-
-    end
-
-    for t=s.N-1:-1:2
-
-        ## Shocks
-
-        # shock to interest rate
-        m=merge((r = m.rv[t],
-        r_lag = m.rv[t-1],
-
-        # shock to foreign price
-        Pf_lag = m.Pfv[t-1],
-        Pf = m.Pfv[t],
-
-        # shock to foreign demand
-        Yf = Yfv[t],
-
-        # shock to collateral constraint
-        θ = m.θ_v[t],
-
-        # shock to discount factor
-        β = m.β_v[t],
-
-        # shock to depreciation rate
-        δ = m.δ_v[t],
-
-        # shock to iceberg costs
-        τ = m.τ_v[t],
-
-        # shock to tariffs
-        τ_x = m.τ_x_v[t],
-        τ_m_c = m.τ_m_c_v[t],
-        τ_m_k = m.τ_m_k_v[t],
-
-
-        ## GE prices
-
-        ϕ_h = ϕhguess[t],
-        ϕ_h_lag = ϕhguess[t-1],
-
-        w = wguess[t],
-        w_lag = wguess[t-1],
-
-        ξ = ξguess[t],
-        ξ_lag = ξguess[t-1],
-
-        Pk = Pkguess[t],
-        Pk_lag = Pkguess[t-1]),m)
-
-        #Fixed costs
-        if  s.fcost_fgoods==0 # If in units of labor
-            m=merge((m.F = m.w*m.F_base,),m)
-         else
-            m=merge((m.F = m.F_base,),m)
-        end
-
-      # Tariff income (initialized to 0)
-        if s.tariffsincome == 1
-
-            m=merge((Yk = Ykguess[t],
-            Yc = Ycguess[t]),m)
-            #Yc=m.Yc
-            #Yc =  (ϕhguess[t] - (m.ω_m_k*Pkguess[t])^m.σ*Ykguess[t])./(m.ω_m_c^m.σ)
-            ym_c = m.Yc*(m.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c)^(-m.σ)
-            ym_k = m.Yk*(Pkguess[t]^m.σ)*(m.ξ*m.Pm_k*(1+m.τ_m_k)/m.ω_m_k)^(-m.σ)
-            if s.tariffsincome_PE==0
-                m=merge((tariffsincome = m.τ_m_c*m.ξ*m.Pm_c*ym_c + m.τ_m_k*m.ξ*m.Pm_k*ym_k,),m)
-            end
-            tariffsincomet[t]=m.tariffsincome
-            m=merge((tariffsincomet=tariffsincomet,),m)
-        end
-
-        ## Solve static and dynamic problems
-
-        # Period 2
-        if t==2
-            r_temp = KLS3_staticproblem_period2_altTiming(m,s,r_initial,rt)
-        else
-            r_temp = KLS3_staticproblem(m,s,r_initial)
-        end
-
-        #Fixed costs
-        r_temp=merge((S_mat = r_temp.e*m.F,
-        F_mat = r_temp.e*m.F,
-        profits=m.w + m.tariffsincome + r_temp.e.*r_temp.π_x + (1-r_temp.e).*r_temp.π_nx),r_temp)
-        rt{t,1}=r_temp
-
-    end
-
-    ### From here onwards PENDING ###
-
-
-    rt = KLS3_dynamicproblem_trans_vec_t(m,s,r,rt);
-
-#         #Value function
-#         vp=rt{t+1}.v,
-#
-#         #Dynamic problem and simulation (No sunk costs)
-#         rt{t,1} = KLS3_dynamicproblem_trans_vec(m,s,r_temp,vp),
-#
-#     end
-
-    if s.flag_simulate == 0
-
-
-
-        [sim_fun, rt] = KLS3_simulate_trans(m,s,rt,Guess);
-
-#         if s.tariffsincome==0
-#             [sim_fun, rt] = KLS3_simulate_trans(m,s,rt,Guess);
-#         else
-#             [sim_fun, rt] = KLS3_simulate_trans(m,s,rt,Guess);
-#         end
-
-    elseif s.flag_simulate == 1
-
-
-#          #save mat_temp_shocks;
-#          load mat_temp_shocks;
-#          s.N=5000000;
-#          s.extra_results=2;
-
-#         [sim_fun, rt] = KLS3_simulate_shock_trans(m,s,rt,Yguess,Xiguess,wguess,sim_0);
-
-       #error('Simulation by generating random shocks not availabe for transition dynamics')
-
-    end
-
-
-    # A fix so that the code does not break
-    sim_fun.mc_n(isnan(sim_fun.mc_n(2:s.N-1)==1)) = 10000;
-    sim_fun.mc_y(isnan(sim_fun.mc_y(2:s.N-1))) = 10000;
-    sim_fun.mc_y_belief(isnan(sim_fun.mc_y_belief(2:s.N-1))) = 10000;
-    sim_fun.mc_y(isnan(sim_fun.mc_y(2:s.N-1))) = 10000;
-
-
-    # Market clearing conditions
-
-
-    if s.tariffsincome==0
-         mc = [sim_fun.mc_n(2:s.N-1)' sim_fun.mc_y(2:s.N-1)' sim_fun.mc_k(2:s.N-1)' sim_fun.mc_y_belief(2:s.N-1)']';
-
-    elseif s.tariffsincome==1
-
-        #Fix so that code does not break
-        sim_fun.mc_Yk_belief(isnan(sim_fun.mc_Yk_belief(2:s.N-1))) = 10000;
-
-#         persistent count_trans
-#         count_transif isempty(count_trans)
-#             count_trans=1;
-#         else
-#             count_trans=count_trans+1;
-#         end
-#
-#         if mod(count_trans,100)==0
-#             disp(['count_trans: ' num2str(count_trans)]);
-#         end
-
-        mc = [sim_fun.mc_n(2:s.N-1)' sim_fun.mc_y(2:s.N-1)' sim_fun.mc_k(2:s.N-1)'...
-              sim_fun.mc_y_belief(2:s.N-1)' sim_fun.mc_Yk_belief(2:s.N-1)']';
-
-    end
-    return mc, m, r, sim_fun, rt
 end
