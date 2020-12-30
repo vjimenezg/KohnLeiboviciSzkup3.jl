@@ -13,9 +13,9 @@
     tariffsincome_PE = 0)
 
 ##################### Steady State in GE? #####################
-    s=merge((GE =1, # =0 if partial equilibrium (inital SS)
+    s=merge(s,(GE =1, # =0 if partial equilibrium (inital SS)
                   # =1 if general equilibrium (initial SS)
-        GE_end = 1),s) # =0 if partial equilibrium (final SS)
+        GE_end = 1)) # =0 if partial equilibrium (final SS)
                       # =1 if general equilibrium (final SS)
 
 ##################### Additional Options #####################
@@ -23,7 +23,7 @@
 #Denomination of fixed costs (includes sunk costs)
 # =0 if fixed costs denominated in units of labor
 # =1 if fixed costs denominated in units of the final good
-    s=merge((fcost_fgoods = 0,
+    s=merge(s,(fcost_fgoods = 0,
 
 # Simulation
     flag_simulate = 0, # flag_simulate = 0, simulates by iterating on measure of firms,
@@ -37,7 +37,7 @@
     welfare = 1, # Experiments
     save_workspace = 1, # Saving options
     save_prices = 1,
-    load_prices = 0),s) # load prices
+    load_prices = 0)) # load prices
 
 
 ##################### Baseline Parameters #####################
@@ -73,74 +73,74 @@ log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/((1-m.log_z_ρ^2)))*(1/2)) #Normalize
 
 ##################### Transition Settings #####################
 
-s=merge((N=60,),s) #length of transition
+s=merge(s,(N=60,)) #length of transition
 
 #Shock to collateral constraint
 θ_old = m.θ;
 θ_new = m.θ;
-m=merge((θ_v = vcat(θ_old*ones(2,1),θ_new*ones(N-2,1)),),m)
+m=merge(m,(θ_v = vcat(θ_old*ones(2,1),θ_new*ones(N-2,1)),))
 
 #Real interest rate shock
 r_old = m.r;
 r_new = m.r;
-m=merge((rv = vcat(r_old*ones(2,1),r_new*ones(N-2,1)),),m)
+m=merge(m,(rv = vcat(r_old*ones(2,1),r_new*ones(N-2,1)),))
 
 
 # Beta shock
 β_old = m.β;
 β_new = m.β;
-m=merge((β_v = vcat(β_old,β_new*ones(N-1,1)),),m)
+m=merge(m,(β_v = vcat(β_old,β_new*ones(N-1,1)),))
 
 
 # delta shock
 δ_old = m.δ;
 δ_new = m.δ;
-m=merge((δ_v = vcat(δ_old,δ_new*ones(N-1,1)),),m)
+m=merge(m,(δ_v = vcat(δ_old,δ_new*ones(N-1,1)),))
 
 # Foreign CPI shock
 Pf_old = m.Pf;
 Pf_new = m.Pf;
-m=merge((Pfv = vcat(Pf_old,Pf_new*ones(N-1,1)),),m)
+m=merge(m,(Pfv = vcat(Pf_old,Pf_new*ones(N-1,1)),))
 
 
 #Shock to pm
 # pm_old = m.Pm;
 # pm_new = m.Pm;
-# m=merge((pm_v = vcat(pm_old,pm_new*ones(N-1,1)),),m)
+# m=merge(m,(pm_v = vcat(pm_old,pm_new*ones(N-1,1)),))
 
 # Foreign output shock
 # Negative shock -> devaluation
 # Positive shock -> apreciation
 Yf_old = m.Yf;
 Yf_new = m.Yf;
-m=merge((Yfv = vcat(Yf_old,Yf_new*ones(N-1,1)),),m)
+m=merge(m,(Yfv = vcat(Yf_old,Yf_new*ones(N-1,1)),))
 
 
 #Shock to iceberg costs
 τ_old = m.τ;
 τ_new = 1*m.τ;
-m=merge((τ_v = vcat(τ_old*ones(2,1),τ_new*ones(N-2,1)),),m)
+m=merge(m,(τ_v = vcat(τ_old*ones(2,1),τ_new*ones(N-2,1)),))
 
 
 #Shocks to tariffs
 τ_m_c_old = m.τ_m_c;
 τ_m_c_new = 0.375*m.τ_m_c;
-m=merge((τ_m_c_v = vcat(τ_m_c_old,τ_m_c_new*ones(N-1,1)),),m)
+m=merge(m,(τ_m_c_v = vcat(τ_m_c_old,τ_m_c_new*ones(N-1,1)),))
 
 
 τ_m_k_old = m.τ_m_k;
 τ_m_k_new = 1*m.τ_m_k;
-m=merge((τ_m_k_v = vcat(τ_m_k_old,τ_m_k_new*ones(N-1,1)),),m)
+m=merge(m,(τ_m_k_v = vcat(τ_m_k_old,τ_m_k_new*ones(N-1,1)),))
 
 
 τ_x_old = m.τ_x;
 τ_x_new = 1*m.τ_x;
-m=merge((τ_x_v = vcat(τ_x_old,τ_x_new*ones(N-1,1)),),m)
+m=merge(m,(τ_x_v = vcat(τ_x_old,τ_x_new*ones(N-1,1)),))
 
 
 ##################### Solution Options #####################
 
-s=merge((
+s=merge(s,(
 #Productivity
     z_grid_size = 200, # #100; #75; #250; #Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; #Curvature parameter to control distance across grid points
@@ -169,7 +169,7 @@ s=merge((
      method_GE=:trustregion,
      xtol_GE=1E-7,
      ftol_GE=1E-8,
-     show_trace_GE=true),s)
+     show_trace_GE=true))
 
      # This has to be translated to NLsolve options [PENDING]
 
