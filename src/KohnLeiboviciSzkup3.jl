@@ -11,20 +11,22 @@ clearconsole()
 # Dependencies
 
 using LinearAlgebra
-using DifferentialEquations, Sundials, SimpleDifferentialOperators, DiffEqCallbacks
-using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
-using Interpolations, QuadGK # integration
+# using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
+using Interpolations # integration
 using NLsolve # root-finding
 using NamedTupleTools, Parameters # named tuples
 using Roots
 using QuantEcon
 using Base
 using NaNMath
+using Dates
+using JLD2
+using GMT
 # Model files
 
 include("parameters_settings.jl")
-include("utils.jl")
 include("functions.jl")
+include("functions_trans.jl")
 
 #Step 1: Solve initial steady state
 
@@ -36,7 +38,7 @@ include("functions.jl")
             Pk = 0.969892818482190,
             Yk = 0.065988921968899))
         elseif s.load_prices ==1
-            Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
+            @load "KLS3_Prices.jld2" Prices
             m=merge(m,(w = Prices[2,1],
             Yc = Prices[1,1],
             ξ = Prices[3,1],
@@ -53,7 +55,7 @@ include("functions.jl")
             ξ =0.369060692554216,
             Pk = 0.975043532756500))
         elseif s.load_prices ==1
-            Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
+            @load "KLS3_Prices.jld2" Prices
             m=merge(m,(w = Prices[2,1],
             Φ_h = Prices[1,1],
             ξ = Prices[3,1],
@@ -76,7 +78,7 @@ include("functions.jl")
 
 
 
-    ## Step 2: Solve final steady state
+# Step 2: Solve final steady state
      if s.transition == 1
 
         #Shocks
@@ -100,7 +102,7 @@ include("functions.jl")
                 Pk = 0.969892818482190,
                 Yk = 0.065988921968899))
             elseif s.load_prices ==1
-                Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
+                @load "KLS3_Prices.jld2" Prices
                 m=merge(m,(w = Prices[2,end],
                 Yc = Prices[1,end],
                 ξ = Prices[3,end],
@@ -123,7 +125,7 @@ include("functions.jl")
                 ξ =0.369060692554216,
                 Pk = 0.975043532756500))
             elseif s.load_prices ==1
-                Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
+                @load "KLS3_Prices.jld2" Prices
                 m=merge(m,(w = Prices[2,1],
                 ϕ_h = Prices[1,1],
                 ξ = Prices[3,1],
@@ -154,14 +156,16 @@ include("functions.jl")
         Sales_Laspeyres = sum(sim_end.measure.*(r_0.pd.*r_end.yd + m_0.ξ.*r_0.pf.*r_end.yf)),
         GDP_Laspeyres = sum(sim_end.measure.*(r_0.pd.*r_end.yd + m_0.ξ*r_0.pf.*r_end.yf -r_end.m*m_0.Pk))))
 
- ## STEP 3: guess sequence of aggregate prices for N period, with N sufficiently large (this was in a separate script in matlab, KL3_trans_obj)
+ # STEP 3: guess sequence of aggregate prices for N period, with N sufficiently large (this was in a separate script in matlab, KLS3_trans_obj)
 
- # Store results from initial and final steady states [PENDING]
+ # Store results from initial and final steady states
 
- rt{1,1} = r_0
- rt{1,1}.measure= sim_0.measure
- rt{s.N,1} = r_end
- rt{s.N,1}.measure= sim_end.measure
+ rt=Vector{Any}(undef,s.N)
+
+ rt[1] = (r_0=r_0,
+ measure= sim_0.measure)
+ rt[s.N] = (r_end=r_end,
+ measure= sim_end.measure)
  r_0=nothing
  r_end=nothing
 
@@ -174,7 +178,7 @@ include("functions.jl")
  Yct = zeros(s.N,1)
  tariffsincomet= zeros(s.N,1)
 
- if s.tariffsincome == 1
+    if s.tariffsincome == 1
      # Guess
      #ϕht[1] = m_0.ϕ_h
      wt[1] = m_0.w
@@ -183,7 +187,7 @@ include("functions.jl")
      Yct[1] = m_0.Yc
      Ykt[1] = m_0.Yk
 
-     if s.PE == 0
+        if s.PE == 0
          #ϕht[s.N]=m_end.ϕ_h
          wt[s.N]=m_end.w
          ξt[s.N]=m_end.ξ
@@ -191,7 +195,7 @@ include("functions.jl")
          Yct[s.N] = m_end.Yc
          Ykt[s.N] = m_end.Yk
 
-     elseif s.PE ==1
+        elseif s.PE ==1
 
          #ϕht[s.N]=m_0.ϕ_h
          wt[s.N]=m_0.w
@@ -200,12 +204,12 @@ include("functions.jl")
          Yct[s.N] = m_0.Yc
          Ykt[s.N] = m_0.Yk
 
-     end
+        end
 
 
      period2_change = 0.5
 
-     init =wt(1)+ (wt[s.N]-wt[1])*period2_change
+     init =wt[1]+ (wt[s.N]-wt[1])*period2_change
      expo =log.(wt[s.N]./init)./log.(s.N)   #wt[1]*(s.N)^expo=wt[s.N] =>expo=log.(wt[s.N]/wt[1])/log.(s.N)
      wt[2:s.N-1]=init*(2:s.N-1).^expo
 
@@ -222,34 +226,63 @@ include("functions.jl")
 
     Guess = [Yct[2:s.N-1] wt[2:s.N-1] ξt[2:s.N-1] Pkt[2:s.N-1] Ykt[2:s.N-1]]
 
-    if s.load_prices == 1
-        Prices=readdlm("KLS3_prices.txt",'\t',Float64,'\n')
+        if s.load_prices == 1
+        @load "KLS3_Prices.jld2" Prices
          Guess = [Prices[1,2:s.N-1] Prices[2,2:s.N-1] Prices[3,2:s.N-1] Prices[4,2:s.N-1] Prices[5,2:s.N-1]]
-     end
+        end
 
      m=merge(m,(Pkt=Pkt,wt=wt,ξt=ξt,Ykt=Ykt,Yct=Yct,tariffsincomet=tariffsincomet))
      #m=merge(m,(ϕht=ϕht,))
- end
+    end
 
  ## STEP 4: Solving for the GE prices and quantities
 
      if s.transition_GE== 1
          # guess
          Guess=log.(Guess)
-         # solution
-         solve_prices = @(Prices)KLS3_transition_vec2(Prices,m,r,s,rt); #Function that takes prices as inputs and market clearing values as output
 
-         ### FROM HERE ONWARDS PENDING, WORKING ON KLS3_transition_vect2 ###
-         [Prices_sol, mcc_sol, exit_sol] = fsolve(solve_prices,Guess,s.options_trans)
-         [mc, m, r, sim_fun, rt] = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
+         results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess,autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+
+         mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
      else
-
          Guess=log.(Guess)
          Prices_sol = Guess
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
 
      end
 
+    end
+
+ ## Welfare analysis
+ if s.welfare==1 #PENDING
+include("welfare.jl")
+ end
+
+
+
+ ## End
+
+ if s.save_prices==1
+     if s.tariffsincome == 0
+         Prices[1,:] = [m.ϕht[1] exp.(Prices_sol[1:s.N-2]) m.ϕht[s.N]]
+         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4]) m.wt[s.N]]
+         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6]) m.ξt[s.N]]
+         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8]) m.Pkt[s.N]]
+     elseif s.tariffsincome == 1
+         Prices[1,:] = [m.Yct[1] exp.(Prices_sol[1:s.N-2]) m.Yct[s.N]]
+         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4]) m.wt[s.N]]
+         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6]) m.ξt[s.N]]
+         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8]) m.Pkt[s.N]]
+         Prices[5,:] = [m.Ykt[1] exp.(Prices_sol[4*s.N-7:end]) m.Ykt[s.N]]
+     end
+    @save "KLS3_prices.jld2" Prices
+ end
+
+ if s.save_workspace==1
+     rt = nothing
+     r_0 = nothing
+     r_end = nothing
+     @save "workspace_$(Dates.year(now()))_$(Dates.monthname(now()))_$(Dates.day(now()))_$(Dates.hour(now()))_$(Dates.minute(now()))"
 
  end
 

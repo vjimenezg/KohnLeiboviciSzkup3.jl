@@ -177,15 +177,18 @@ s=merge(s,(
     # 'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
     # ,'ScaleProblem','jacobian','UseParallel',true)
 
-     ## [This is not translated, copy/paste from Matlab, originally commented] Simulation by generating sequence of shocks (if s.flag_simulate==1)
+     ##  Simulation by generating sequence of shocks (if s.flag_simulate==1)
 
-     # if ad_opt.flag_simulate == 1
-     #     #Simulations
-     #     sim_op=@withkw(T = 40, #50;   # Number of periods
-     #     Nfirms = 1000000, #250000; #1000000; #400000;  # Number of firms
-     #     burn = 1, # Number of time periods burnt = s.burn*s.T
-     #     seed = 88,
-    #      setGlobalStream(RandStream('mt19937ar','seed',s.seed)); # Sets seed for randomizations)
+     # if s.flag_simulate == 1
+     #
+     #     %Simulations
+     #     s=merge(s,(T = 40, %50;   % Number of periods
+     #     Nfirms = 1000000, %250000, %1000000, %400000,  % Number of firms
+     #     burn = 1, % Number of time periods burnt = s.burn*s.T
+     #     seed = 88))
+     #     RandStream.setGlobalStream(RandStream('mt19937ar','seed',s.seed)) # Sets seed for randomizations
+     #
+     # end
 
 
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################

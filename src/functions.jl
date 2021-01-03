@@ -1,7 +1,33 @@
     #########################################
-    # Measure, Static Problem, Static Problem Period 2 (Alt Timing), Dynamic Problem, Simulation, GE Par, Transition Vec 2 #
+    # Tauchen, Measure, Static Problem, Static Problem Period 2 (Alt Timing), Dynamic Problem, Simulation, GE Par (NLSolve), GE Par (Standard)#
     #########################################
 
+############################# Tauchen #######################################
+    function tauchen(n::Integer,c::Integer=4, ρ::Real, σ_e::Real, μ=zero(typeof(ρ)),z_power::Integer=1)
+
+    σ_z=σ_e/sqrt(1-ρ^2)
+    r=(2*σ_z)*c
+    z_1 = μ - c*σ_z
+    z_end = μ + c*σ_z
+    z = (LinRange(0,1,n).^(z_power)).*(z_end-z_1) + z_1
+    z = z'
+
+    m = (z[2:n]+z[1:n-1])/2
+    P = zeros(n,n)
+    d=Normal()
+    for i=1:n
+    P[i,1] = Distributions.cdf(d,(m[1]-(1-ρ)*μ-ρ*z[i])/σ_e)
+       for j=2:n-1
+            P[i,j] = Distributions.cdf(d,(m[j]-(1-ρ)*μ-ρ*z[i])/σ_e)-Distributions.cdf(d,(m[j-1]-(1-ρ)*μ-ρ*z[i])/σ_e)
+       end
+    P[i,n] = 1-Distributions.cdf(d,(m[n-1]-(1-ρ)*μ-ρ*z[i])/σ_e)
+    end
+
+    mc=QuantEcon.MarkovChain(P)
+    π_1=QuantEcon.stationary_distribution(mc)
+
+    return z,P,π_1
+    end
 
 ############################# Measure ###########################
 
@@ -223,10 +249,12 @@ function KLS3_staticproblem(m,s,r)
     ## Export decision
         e .= r.pi_x .>= r.pi_nx;
         r=merge(r,(e=e,))
-    #    r.k_const = []; r.n_x_c = []; r.m_x_c = []; r.yd_x_c = [];r.yf_x_c = []; r.pd_x_c = [];  r.pf_x_c = [];
-    #    r.k_x_u = [];   r.n_x_u = []; r.m_x_u = []; r.yd_x_u = []; r.yf_x_u = []; r.pd_x_u = []; r.pf_x_u = [];
-    #    r.n_nx_c = []; r.m_nx_c = []; r.yd_nx_c = []; r.yf_nx_c = []; r.pd_nx_c = []; r.pf_nx_c = [];
-    #    r.k_nx_u = []; r.n_nx_u = []; r.m_nx_u = []; r.yd_nx_u = []; r.yf_nx_u = []; r.pd_nx_u = []; r.pf_nx_u = [];
+
+      r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = nothing, pd_x_c = nothing,  pf_x_c = nothing))
+       r=merge(r,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
+      r=merge(r,(n_nx_c = nothing, m_nx_c = nothing, yd_nx_c = nothing, yf_nx_c = nothing, pd_nx_c = nothing, pf_nx_c = nothing))
+       r=merge(r,(k_nx_u = nothing, n_nx_u = nothing, m_nx_u = nothing, yd_nx_u = nothing, yf_nx_u = nothing, pd_nx_u = nothing, pf_nx_u = nothing))
+
     return r
 
 end
@@ -246,8 +274,8 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     cap_gain = (1-m.Pk/m.Pk_lag)
 
     # Capital
-    r=merge(r,(k_x = rt{1}.k,
-    k_nx = rt{1}.k))
+    r=merge(r,(k_x = rt[1].k,
+    k_nx = rt[1].k))
 
     # Useful constants
     MC = (m.Pk/m.α_m )^m.α_m * (m.w /((1-m.α)*(1-m.α_m)))^((1-m.α)*(1-m.α_m))
@@ -395,22 +423,22 @@ function KLS3_dynamicproblem(m,s,r,guessV)
         r=merge(r,(v = v_new,
         ap = ap,
         ap_ind = ap_ind,
-        c = c))
+        c = c,
 
     ## Store output to be used in simulation
 
-        r=merge(r,(pd = (1-r.e).*r.pd_nx + r.e.*r.pd_x,
+        pd = (1-r.e).*r.pd_nx + r.e.*r.pd_x,
         yd = (1-r.e).*r.yd_nx + r.e.*r.yd_x,
         pf = r.e.*r.pf_x,
         yf =r.e.*r.yf_x,
         k = (1-r.e).*r.k_nx + r.e.*r.k_x,
         n = (1-r.e).*r.n_nx + r.e.*r.n_x,
-        m = (1-r.e).*r.m_nx + r.e.*r.m_x))
+        m = (1-r.e).*r.m_nx + r.e.*r.m_x,
 
-        # r.pd_nx = []; r.pd_x = []; r.yd_nx=[];  r.yd_x=[]; r.pf_x=[]; r.yf_x=[];
-        # r.k_nx =[]; r.k_x = []; r.n_nx=[]; r.n_x=[]; r.m_nx=[]; r.m_x=[];
+        pd_nx = nothing, pd_x = nothing, yd_nx=nothing,  yd_x=nothing, pf_x=nothing, yf_x=nothing,
+         k_nx =nothing, k_x = nothing, n_nx=nothing, n_x=nothing, m_nx=nothing, m_x=nothing,
 
-        r=merge(r,(pi = (1-r.e).*r.pi_nx + r.e.*r.pi_x,
+        π_1 = (1-r.e).*r.π_nx + r.e.*r.π_x,
         a = r.a_grid_mat,
 
         #Fixed costs
@@ -684,7 +712,7 @@ return sim, r, s
 
 end
 
-############################# GE_par (2 versions, firs for using NLsolve [in-place function], second standard)#############################
+############################# GE_par (2 versions, first for using NLsolve [in-place function], second standard)#############################
 
 ####### For NLsolve #######
 
@@ -784,7 +812,6 @@ guessM=sim.measure
         #F[3]=sim.mc_y_belief
         #F[4]=sim.mc_k
         #F[5]=sim.mc_tariffs_belief
-        sim=merge(sim,(mcc = F,))
     end
 
 #Display
