@@ -737,13 +737,13 @@ function KLS3_transition_vec2!(F,Guess,m,r,s,rt)
 
     rt = KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 
-#         #Value function
-#         vp=rt[t+1].v,
-#
-#         #Dynamic problem and simulation (No sunk costs)
-#         rt[t] = KLS3_dynamicproblem_trans_vec(m,s,r_temp,vp),
-#
-#     end
+    #         #Value function
+    #         vp=rt[t+1].v,
+    #
+    #         #Dynamic problem and simulation (No sunk costs)
+    #         rt[t] = KLS3_dynamicproblem_trans_vec(m,s,r_temp,vp),
+    #
+    #       end
 
     if s.flag_simulate == 0
 
@@ -919,13 +919,13 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
 
     rt = KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 
-#         #Value function
-#         vp=rt[t+1].v,
-#
-#         #Dynamic problem and simulation (No sunk costs)
-#         rt[t] = KLS3_dynamicproblem_trans_vec(m,s,r_temp,vp),
-#
-#     end
+    #         #Value function
+    #         vp=rt[t+1].v,
+    #
+    #         #Dynamic problem and simulation (No sunk costs)
+    #         rt[t] = KLS3_dynamicproblem_trans_vec(m,s,r_temp,vp),
+    #
+    #     end
 
     if s.flag_simulate == 0
 

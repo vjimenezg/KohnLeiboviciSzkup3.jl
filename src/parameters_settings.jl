@@ -3,8 +3,8 @@
 
 
 ##################### Directory settings #####################
-    results=(dir = pwd(),
-    dir_results = string(dir,"/","results", "/"))
+    results = (dir = pwd(),
+    dir_results = string(results.dir,"/","results", "/"))
 ##################### Tariff Income #####################
     s=(tariffsincome = 1, # = 0 if don't give tariffs income back
                              # = 1 give tariffs income back (we need additional
@@ -42,7 +42,7 @@
 
 ##################### Baseline Parameters #####################
 
-m= (θ = 0.20541136, #Collateral constraint
+m = (θ = 0.20541136, #Collateral constraint
     F_base = 0.46563816, #Fixed export cost
     log_z_σ = 0.15652825, #Standard deviation of log-normal productivity distribution
 α_m=0.5,
@@ -67,13 +67,13 @@ Pm_k = 1.0,
 ω_m = 1.0, #Measure of varieties produced by the rest of the world # CHECK)
 r = 0.06,
 tariffsincome = 0.0,
-log_z_ρ = 0.9, #13.69641182/14.69641182, #Persistence
-log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/((1-m.log_z_ρ^2)))*(1/2)) #Normalize average productivity to 1, log_z_mu is the mean of log_z
+log_z_ρ = 0.9) #13.69641182/14.69641182, #Persistence
+m=merge(m,(log_z_μ = log.(m.z_mean)-(m.log_z_σ^2)*(1/((1-m.log_z_ρ^2)))*(1/2),)) #Normalize average productivity to 1, log_z_mu is the mean of log_z
 
 
 ##################### Transition Settings #####################
-
-s=merge(s,(N=60,)) #length of transition
+N=60
+s=merge(s,(N=N,)) #length of transition
 
 #Shock to collateral constraint
 θ_old = m.θ;
@@ -163,13 +163,20 @@ s=merge(s,(
     ac_iter = 10, #8; #Accelerator iterations
 
 #Optimizer options
-     MaxFunEvalsTrans = 8000,
-     MaxIter = 15,
 
-     method_GE=:trustregion,
+     method_GE=:trust_region,
      xtol_GE=1E-7,
      ftol_GE=1E-8,
-     show_trace_GE=true))
+     show_trace_GE=true,
+     #MaxFunEvals_GE = 8_000,
+     #MaxIter_GE = 15,
+
+     method_trans=:trust_region,
+     xtol_trans=1E-7,
+     ftol_trans=1E-7,
+     show_trace_trans=true,
+     MaxFunEvals_trans = 8_000,
+     MaxIter_trans = 15))
 
      # This has to be translated to NLsolve options [PENDING]
 
@@ -177,38 +184,26 @@ s=merge(s,(
     # 'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
     # ,'ScaleProblem','jacobian','UseParallel',true)
 
-     ##  Simulation by generating sequence of shocks (if s.flag_simulate==1)
-
-     # if s.flag_simulate == 1
-     #
-     #     %Simulations
-     #     s=merge(s,(T = 40, %50;   % Number of periods
-     #     Nfirms = 1000000, %250000, %1000000, %400000,  % Number of firms
-     #     burn = 1, % Number of time periods burnt = s.burn*s.T
-     #     seed = 88))
-     #     RandStream.setGlobalStream(RandStream('mt19937ar','seed',s.seed)) # Sets seed for randomizations
-     #
-     # end
 
 
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################
 
         #Productivity
 
-        log_z_grid,z_P,z_π =tauchen(s.z_grid_size,4,m.log_z_ρ,m.log_z_σ,m.log_z_μ,s.z_grid_power)
+        log_z_grid,z_P,z_π =tauchen(s.z_grid_size,m.log_z_ρ,m.log_z_σ,m.log_z_μ,4,s.z_grid_power)
 
-        r=(log_z_grid=log_z_grid, z_P=z_P, z_π=z_π,
-        z_grid = exp(r.log_z_grid'),
-        z_grid_original = exp(r.log_z_grid'),
+        r = (log_z_grid=log_z_grid, z_P=z_P, z_π=z_π)
+        r=merge(r,(z_grid = exp.(r.log_z_grid'),
+        z_grid_original = exp.(r.log_z_grid')))
 
         #Productivity process statistics
-        z_min=min(r.z_grid),
-        z_max = max(r.z_grid),
+        r=merge(r,(z_min=minimum(r.z_grid,dims=1),
+        z_max = maximum(r.z_grid,dims=1),
         z_mean = sum(r.z_grid.*r.z_π),
         z = ones(s.a_grid_size,1)*r.z_grid',
 
         #Asset grid
-        a_grid = LinRange(0,1,s.a_grid_size), #Asset grid
-        a_grid = r.a_grid.^s.a_grid_power,
-        a_grid = r.a_grid.*(s.a_grid_ub-s.a_grid_lb) + s.a_grid_lb,
-        a_grid_vec = repeat(r.a_grid,1,length(r.a_grid)))
+        a_grid_1 = LinRange(0,1,s.a_grid_size))), #Asset grid
+        r=merge(r,(a_grid_2 = r.a_grid_1.^s.a_grid_power,))
+        r=merge(r,(a_grid = r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) + s.a_grid_lb,
+        a_grid_vec = repeat(r.a_grid,1,length(r.a_grid))))

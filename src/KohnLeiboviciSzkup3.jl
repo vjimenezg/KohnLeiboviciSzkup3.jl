@@ -23,7 +23,7 @@ using Dates
 using JLD2
 using GMT
 # Model files
-
+include("tauchen.jl")
 include("parameters_settings.jl")
 include("functions.jl")
 include("functions_trans.jl")
@@ -67,7 +67,7 @@ include("functions_trans.jl")
 
     if s.GE == 1
         results_GE =
-         nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+         nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
         solver=merge(solver,(z=results_GE.zero,))
         mcc_0, m_0, r_0, s_0, sim_0 = KLS3_GE_par(solver.z,m,s,r)
         solver=merge(solver,(mcc_0=mcc_0,))
@@ -141,7 +141,7 @@ include("functions_trans.jl")
         end
         if s.GE_end == 1  && s.PE == 0
             results_GE =
-             nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+             nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
             solver=merge(solver,(z=results_GE.zero,))
             mcc_end, m_end, r_end, s_end, sim_end = KLS3_GE_par(solver.z,m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
@@ -241,7 +241,7 @@ include("functions_trans.jl")
          # guess
          Guess=log.(Guess)
 
-         results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess,autodiff = :forward, method=s.method, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+         results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess,autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
 
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
      else
