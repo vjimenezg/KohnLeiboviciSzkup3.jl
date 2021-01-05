@@ -19,7 +19,7 @@ P[i,n] = 1-Distributions.cdf(d,(m[n-1]-(1-ρ)*μ-ρ*z[i])/σ_e)
 end
 
 mc=QuantEcon.MarkovChain(P)
-π_1=QuantEcon.stationary_distributions(mc)
+π_1=hcat(QuantEcon.stationary_distributions(mc)...)'
 
 return z,P,π_1
 end

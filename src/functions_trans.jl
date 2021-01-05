@@ -803,6 +803,7 @@ function KLS3_transition_vec2!(F,Guess,m,r,s,rt)
         end
         for j=4N-7:5N-10
         F[j]=sim_fun.mc_Yk_belief[j+9-4N]
+        end
     end
     return F
 end

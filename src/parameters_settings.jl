@@ -1,10 +1,8 @@
 
 
-
-
 ##################### Directory settings #####################
-    results = (dir = pwd(),
-    dir_results = string(results.dir,"/","results", "/"))
+    results = (dir = pwd(),)
+    results=merge(results,(dir_results = string(results.dir,"/","results", "/"),))
 ##################### Tariff Income #####################
     s=(tariffsincome = 1, # = 0 if don't give tariffs income back
                              # = 1 give tariffs income back (we need additional
@@ -178,12 +176,6 @@ s=merge(s,(
      MaxFunEvals_trans = 8_000,
      MaxIter_trans = 15))
 
-     # This has to be translated to NLsolve options [PENDING]
-
-    # options_trans = optimoptions('fsolve','Display','iter','StepTolerance',1e-7,'FunctionTolerance',1e-7,'MaxFunctionEvaluations',s.MaxFunEvalsTrans,'MaxIterations',s.MaxIter,...
-    # 'Algorithm','levenberg-marquardt','InitDamping',0.01,'FiniteDifferenceStepSize',0.001,'FiniteDifferenceType','central'...
-    # ,'ScaleProblem','jacobian','UseParallel',true)
-
 
 
     ##################### Setup asset grids, productivity grids, annuity market transfers #####################
@@ -203,7 +195,7 @@ s=merge(s,(
         z = ones(s.a_grid_size,1)*r.z_grid',
 
         #Asset grid
-        a_grid_1 = LinRange(0,1,s.a_grid_size))), #Asset grid
+        a_grid_1 = LinRange(0,1,s.a_grid_size))) #Asset grid
         r=merge(r,(a_grid_2 = r.a_grid_1.^s.a_grid_power,))
-        r=merge(r,(a_grid = r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) + s.a_grid_lb,
-        a_grid_vec = repeat(r.a_grid,1,length(r.a_grid))))
+        r=merge(r,(a_grid = r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) .+ s.a_grid_lb,))
+        r=merge(r,(a_grid_vec = repeat(r.a_grid,1,length(r.a_grid)),))

@@ -8,20 +8,21 @@ module KohnLeiboviciSzkup3
 
 clearconsole()
 
-# Dependencies
+# Dependencies (commented the ones I'm not sure I need)
 
 using LinearAlgebra
 # using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
-using Interpolations # integration
+#using Interpolations # integration
 using NLsolve # root-finding
 using NamedTupleTools, Parameters # named tuples
-using Roots
+#using Roots
 using QuantEcon
 using Base
 using NaNMath
 using Dates
 using JLD2
-using GMT
+#using GMT
+using Distributions
 # Model files
 include("tauchen.jl")
 include("parameters_settings.jl")
