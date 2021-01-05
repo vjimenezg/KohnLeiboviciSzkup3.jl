@@ -65,7 +65,7 @@ end
 
 function KLS3_staticproblem(m,s,r)
 
- ### Useful objects
+### Useful objects
 
         #Assets
         r=merge(r,(a_grid_mat = r.a_grid*ones(1,s.z_grid_size),
@@ -74,6 +74,7 @@ function KLS3_staticproblem(m,s,r)
         z_grid_mat = r.z))
 
         #ϕ_h
+
         ϕ_h = m.ϕ_h #Guessed value
 
         #Objects common for X and NX
@@ -93,20 +94,20 @@ function KLS3_staticproblem(m,s,r)
     #Unconstrained
 
         # marginal cost
-        r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),
+        r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
-        k_x_u = (m.α*(1-m.α_m)./m.rtilde_u).*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
+        r=merge(r,(k_x_u = (m.α*(1-m.α_m)./m.rtilde_u).*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
         n_x_u = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
         m_x_u = (m.α_m/m.Pk)*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
 
         yd_x_u = const_σ*ϕ_h*(r.μ_u.^(-m.σ)),
-        yf_x_u = const_σ*(m.ξ^m.σ)*m.Yf*((1+m.τ_x)^(-m.σ))*(m.τ^(-m.sigma))*(r.μ_u.^(-m.σ)),
+        yf_x_u = const_σ*(m.ξ^m.σ)*m.Yf*((1+m.τ_x)^(-m.σ))*(m.τ^(-m.σ))*(r.μ_u.^(-m.σ)),
 
         pd_x_u = m.σ/(m.σ-1)*r.μ_u,
-        pf_x_u = m.σ/(m.σ-1)*m.τ/m.ξ*r.μ_u,
+        pf_x_u = m.σ/(m.σ-1)*m.τ/m.ξ*r.μ_u))
 
         #Solution
-        k_x = r.k_x_u,
+        r=merge(r,(k_x = r.k_x_u,
         n_x = r.n_x_u,
         m_x = r.m_x_u,
         yd_x = r.yd_x_u,
@@ -117,111 +118,111 @@ function KLS3_staticproblem(m,s,r)
 
     #Constrained
         if m.θ<1+m.r
-            r=merge(r,(rtilde_x_c = (((1 ./r.k_const) .* m.α * (1-m.α_m) * const_σ * ϕ_x) .* ((r.μ_u .* m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ))).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),
+            r=merge(r,(rtilde_x_c = (((1 ./r.k_const) .* m.α * (1-m.α_m) * const_σ * ϕ_x) .* ((r.μ_u .* m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ))).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
 
-            mu_x_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))).* ((r.rtilde_x_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),
+            r=merge(r,(μ_x_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))).* ((r.rtilde_x_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
-            n_x_c = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_x*(r.μ_x_c.^(1-m.σ)),
+            r=merge(r,(n_x_c = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_x*(r.μ_x_c.^(1-m.σ)),
             m_x_c = (m.α_m/m.Pk)*const_σ*ϕ_x*(r.μ_x_c.^(1-m.σ)),
 
-            yd_x_c = const_σ*ϕ_h*(μ_x_c.^(-m.σ)),
+            yd_x_c = const_σ*ϕ_h*(r.μ_x_c.^(-m.σ)),
             yf_x_c = const_σ*(m.ξ^m.σ)*m.Yf*((1+m.τ_x)^(-m.σ))*(m.τ^(-m.σ))*(r.μ_x_c.^(-m.σ)),
 
             pd_x_c = m.σ/(m.σ-1).*r.μ_x_c,
             pf_x_c = m.σ/(m.σ-1)*m.τ/m.ξ.*r.μ_x_c))
 
             #Solution
-                const_x .= r.k_const .< r.k_x_u
-                k_x[r.k_const .< r.k_x_u] .= r.k_const
-                n_x[r.k_const .< r.k_x_u] .= r.n_x_c
-                m_x[r.k_const .< r.k_x_u] .= r.m_x_c
-                yd_x[r.k_const .< r.k_x_u] .= r.yd_x_c
-                yf_x[r.k_const .< r.k_x_u] .= r.yf_x_c
-                pd_x[r.k_const .< r.k_x_u] .= r.pd_x_c
-                pf_x[r.k_const .< r.k_x_u] .= pf_x_c
+                r.const_x .= r.k_const .< r.k_x_u
+                r.k_x[r.k_const .< r.k_x_u] .= r.k_const[r.k_const .< r.k_x_u]
+                r.n_x[r.k_const .< r.k_x_u] .= r.n_x_c[r.k_const .< r.k_x_u]
+                r.m_x[r.k_const .< r.k_x_u] .= r.m_x_c[r.k_const .< r.k_x_u]
+                r.yd_x[r.k_const .< r.k_x_u] .= r.yd_x_c[r.k_const .< r.k_x_u]
+                r.yf_x[r.k_const .< r.k_x_u] .= r.yf_x_c[r.k_const .< r.k_x_u]
+                r.pd_x[r.k_const .< r.k_x_u] .= r.pd_x_c[r.k_const .< r.k_x_u]
+                r.pf_x[r.k_const .< r.k_x_u] .= r.pf_x_c[r.k_const .< r.k_x_u]
 
         end
 
-        r=merge(r,(k_x = k_x,
-        n_x = n_x,
-        m_x = m_x,
-        yd_x = yd_x,
-        yf_x = yf_x,
-        pd_x = pd_x,
-        pf_x = pf_x,
-        const_x = const_x))
+        #r=merge(r,(k_x = k_x,
+        #n_x = n_x,
+        #m_x = m_x,
+        #yd_x = yd_x,
+        #yf_x = yf_x,
+        #pd_x = pd_x,
+        #pf_x = pf_x,
+        #const_x = const_x))
 
     #Profits
-        r=merge(r,(π_x = r.pd_x.*r.yd_x + m.ξ*r.pf_x.*r.yf_x - ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x - m.w*r.n_x - m.w*m.F_base - m.Pk*r.m_x,))
+        r=merge(r,(π_x = r.pd_x.*r.yd_x .+ m.ξ*r.pf_x.*r.yf_x .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x .- m.w*r.n_x .- m.w*m.F_base .- m.Pk*r.m_x,))
 
     ## Non-exporters
 
         ϕ_nx = ϕ_h
 
     #Unconstrained
-        r=merge(r,(μ_u = (1 ./r.z_grid_mat) * ((m.Pk/m.α_m)^m.α_m) * ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) * ((m.rtilde_u/(m.α*(1-m.α_m)))^(m.α*(1-m.α_m))),
+        r=merge(r,(μ_u = (1 ./r.z_grid_mat) * ((m.Pk/m.α_m)^m.α_m) * ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) * ((m.rtilde_u/(m.α*(1-m.α_m)))^(m.α*(1-m.α_m))),))
 
-        k_nx_u = (m.α*(1-m.α_m)/m.rtilde_u)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
+        r=merge(r,(k_nx_u = (m.α*(1-m.α_m)/m.rtilde_u)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
         n_nx_u = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
-        m_nx_u = (m.α_m/m.Pk)*const_σ*ϕ_nx*(μ_u.^(1-m.σ)),
+        m_nx_u = (m.α_m/m.Pk)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
 
-        yd_nx_u = const_σ*ϕ_h*(μ_u.^(-m.σ)),
-        yf_nx_u = zeros(size(r.yd_nx_u)),
+        yd_nx_u = const_σ*ϕ_h*(r.μ_u.^(-m.σ))))
+        r=merge(r,(yf_nx_u = zeros(size(r.yd_nx_u)),
 
-        pd_nx_u = m.σ/(m.σ-1)*r.μ_u,
-        pf_nx_u = zeros(size(r.pd_nx_u))))
+        pd_nx_u = m.σ/(m.σ-1)*r.μ_u))
+        r=merge(r,(pf_nx_u = zeros(size(r.pd_nx_u)),))
 
         #Solution
-        k_nx = r.k_nx_u,
+        r=merge(r,(k_nx = r.k_nx_u,
         n_nx = r.n_nx_u,
         m_nx = r.m_nx_u,
         yd_nx = r.yd_nx_u,
         yf_nx = r.yf_nx_u,
         pd_nx = r.pd_nx_u,
         pf_nx = r.pf_nx_u,
-        const_nx = zeros(size(r.k_nx_u))
+        const_nx = zeros(size(r.k_nx_u))))
 
     #Constrained
         if m.θ<1+m.r
-            r=merge(r,(rtilde_nx_c = ( ((1 ./r.k_const) * m.α * (1-m.α_m) * const_σ * ϕ_nx) .* ((r.μ_u * m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ)) ).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),
+            r=merge(r,(rtilde_nx_c = ( ((1 ./r.k_const) * m.α * (1-m.α_m) * const_σ * ϕ_nx) .* ((r.μ_u * m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ)) ).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
 
-            μ_nx_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((r.rtilde_nx_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),
+            r=merge(r,(μ_nx_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((r.rtilde_nx_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
-            n_nx_c = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_nx*(r.μ_nx_c.^(1-m.σ)),
+            r=merge(r,(n_nx_c = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_nx*(r.μ_nx_c.^(1-m.σ)),
             m_nx_c = (m.α_m/m.Pk)*const_σ*ϕ_nx*(r.μ_nx_c.^(1-m.σ)),
 
-            yd_nx_c = const_σ*ϕ_h*(r.μ_nx_c.^(-m.σ)),
-            yf_nx_c = zeros(size(r.yd_nx_c)),
+            yd_nx_c = const_σ*ϕ_h*(r.μ_nx_c.^(-m.σ))))
+            r=merge(r,(yf_nx_c = zeros(size(r.yd_nx_c)),
 
-            pd_nx_c = m.σ/(m.σ-1)*r.μ_nx_c,
-            pf_nx_c = zeros(size(r.pd_nx_c))))
+            pd_nx_c = m.σ/(m.σ-1)*r.μ_nx_c))
+            r=merge(r,(pf_nx_c = zeros(size(r.pd_nx_c)),))
 
             #Solution
-            const_nx .= r.k_const .< r.k_nx_u
-            k_nx[r.k_const .< r.k_nx_u] .= r.k_const
-            n_nx[r.k_const .< r.k_nx_u] .= r.n_nx_c
-            m_nx[r.k_const .< r.k_nx_u] .= r.m_nx_c
-            yd_nx[r.k_const .< r.k_nx_u] .= r.yd_nx_c
-            yf_nx[r.k_const .< r.k_nx_u] .= r.yf_nx_c
-            pd_nx[r.k_const .< r.k_nx_u] .= r.pd_nx_c
-            pf_nx[r.k_const .< r.k_nx_u] .= r.pf_nx_c
+            r.const_nx .= r.k_const .< r.k_nx_u
+            r.k_nx[r.k_const .< r.k_nx_u] .= r.k_const[r.k_const .< r.k_nx_u]
+            r.n_nx[r.k_const .< r.k_nx_u] .= r.n_nx_c[r.k_const .< r.k_nx_u]
+            r.m_nx[r.k_const .< r.k_nx_u] .= r.m_nx_c[r.k_const .< r.k_nx_u]
+            r.yd_nx[r.k_const .< r.k_nx_u] .= r.yd_nx_c[r.k_const .< r.k_nx_u]
+            r.yf_nx[r.k_const .< r.k_nx_u] .= r.yf_nx_c[r.k_const .< r.k_nx_u]
+            r.pd_nx[r.k_const .< r.k_nx_u] .= r.pd_nx_c[r.k_const .< r.k_nx_u]
+            r.pf_nx[r.k_const .< r.k_nx_u] .= r.pf_nx_c[r.k_const .< r.k_nx_u]
         end
 
-        r=merge(r,(k_nx = k_nx,
-        n_nx = n_nx,
-        m_nx = m_nx,
-        yd_nx = yd_nx,
-        yf_nx = yf_nx,
-        pd_nx = pd_nx,
-        pf_nx = pf_nx,
-        const_nx = const_nx))
+        #r=merge(r,(k_nx = k_nx,
+        #n_nx = n_nx,
+        #m_nx = m_nx,
+        #yd_nx = yd_nx,
+        #yf_nx = yf_nx,
+        #pd_nx = pd_nx,
+        #pf_nx = pf_nx,
+        #const_nx = const_nx))
 
     #Profits
-        r=merge(r,(π_nx = r.pd_nx.*r.yd_nx - ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_nx - m.w*r.n_nx - m.Pk*r.m_nx,))
+        r=merge(r,(π_nx = r.pd_nx.*r.yd_nx .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_nx .- m.w*r.n_nx .- m.Pk*r.m_nx,))
 
     ## Export decision
-        e .= r.pi_x .>= r.pi_nx;
-        r=merge(r,(e=e,))
+        r=merge(r,(e=zeros(size(r.k_nx_u)),))
+        r.e .= r.π_x .>= r.π_nx
 
       r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = nothing, pd_x_c = nothing,  pf_x_c = nothing))
        r=merge(r,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
@@ -322,9 +323,10 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
 
      ###Initialize solution objects
-        v_new = guessV #r.pi_nx
-        ap = zeros(size(v_new))
-        ap_ind_float = zeros(size(v_new))
+        v_new = guessV #r.π_nx
+        ap = zeros(Float64,size(v_new))
+        ap_ind = zeros(Int64,size(v_new))
+        c = zeros(Float64,size(v_new))
 
 
         v_old = v_new
@@ -332,7 +334,6 @@ function KLS3_dynamicproblem(m,s,r,guessV)
         z_P=r.z_P
         a_grid=r.a_grid
         exponent=1-m.γ
-
 
         #Value function iteration algorithm
 
@@ -346,21 +347,20 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
             for j = 1:s.z_grid_size
 
-                v_pp = m.β*z_P[j,:]*v_p
+                v_pp = m.β*z_P[j,:]'*v_p
                 for i = 1:s.a_grid_size
 
-                    c =  profits[i,j] .+ a_grid[i].*(1 +m.r) .- a_grid
-                    neg_c_indexes = c.<=0 #indices of a' for which consumption<0
-                    u = (c.^exponent)./exponent .+ neg_c_indexes.*-1e50
+                    c1 =  profits[i,j] .+ a_grid[i].*(1 +m.r) .- a_grid
+                    neg_c1_indexes = c1.<=0 #indices of a' for which consumption<0
+                    u = (c1.^exponent)./exponent .+ neg_c1_indexes.*-1e50
 
                     v,index_ap = findmax(u .+ v_pp)
 
                     v_new[i,j] = v
-                    ap_ind_float[i,j]=index_ap
+                    ap_ind[i,j]=index_ap[2]
 
                 end
             end
-            ap_ind=convert(Array{Int64},ap_ind_float)
             for j =1:s.z_grid_size
                 ap[:,j]=r.a_grid[ap_ind[:,j]]
             end
@@ -368,13 +368,13 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             # Accelerator
 
             # Consumption and utility
-            c = profits .+ r.a_grid' .*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
+            c = profits .+ r.a_grid.*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
 
             u = ((c).^(1-m.γ))./(1-m.γ)
 
             for g=1:s.ac_iter
                 for j = 1:s.z_grid_size
-                   v_new[:,j] = u[:,j] .+ (m.β .* z_P[j,:] .*v_new[ap_ind[:,j],:]')'
+                   v_new[:,j] = u[:,j] .+ (m.β * z_P[j,:]'*v_new[ap_ind[:,j],:])'
 
                 end
 
@@ -382,7 +382,7 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             end
 
             # Convergence
-            v_diff = maximum(abs(v_new-v_old))
+            v_diff = maximum(abs.(v_new-v_old))
             v_old = v_new
 
             if mod(iter,100)==0
@@ -401,17 +401,17 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
     ## Store output to be used in simulation
 
-        pd = (1-r.e).*r.pd_nx + r.e.*r.pd_x,
-        yd = (1-r.e).*r.yd_nx + r.e.*r.yd_x,
+        pd = (1 .-r.e).*r.pd_nx + r.e.*r.pd_x,
+        yd = (1 .-r.e).*r.yd_nx + r.e.*r.yd_x,
         pf = r.e.*r.pf_x,
-        yf =r.e.*r.yf_x,
-        k = (1-r.e).*r.k_nx + r.e.*r.k_x,
-        n = (1-r.e).*r.n_nx + r.e.*r.n_x,
-        m = (1-r.e).*r.m_nx + r.e.*r.m_x,
+        yf = r.e.*r.yf_x,
+        k = (1 .-r.e).*r.k_nx + r.e.*r.k_x,
+        n = (1 .-r.e).*r.n_nx + r.e.*r.n_x,
+        m = (1 .-r.e).*r.m_nx + r.e.*r.m_x,
 
         pd_nx = nothing, pd_x = nothing, yd_nx=nothing,  yd_x=nothing, pf_x=nothing, yf_x=nothing, k_nx =nothing, k_x = nothing, n_nx=nothing, n_x=nothing, m_nx=nothing, m_x=nothing,
 
-        π_1 = (1-r.e).*r.π_nx + r.e.*r.π_x,
+        π_1 = (1 .-r.e).*r.π_nx + r.e.*r.π_x,
         a = r.a_grid_mat,
 
         #Fixed costs
@@ -444,12 +444,12 @@ function KLS3_simulate(m,s,r,guessM)
     sim=(measure=KLS3_measure(s,r,guessM),
 
     w=m.w,
-    ξ=m.ξ,
+    ξ=m.ξ)
 
     # Exporters and non-exporters
-    mass_x = sum(sim.measure.*r.e),)
+    sim=merge(sim,(mass_x = sum(sim.measure.*r.e),))
     sim=merge(sim,(share_x=sim.mass_x, # share of exporters as a fraction of all entrepreneurs
-    mass_d = sum(sim.measure.*(1-r.e)), #Mass of tradable producers who are non-exporters
+    mass_d = sum(sim.measure.*(1 .-r.e)), #Mass of tradable producers who are non-exporters
 
     # Capital good
 
@@ -467,15 +467,15 @@ function KLS3_simulate(m,s,r,guessM)
     C = sum(sim.measure.*r.c)))
 
     #yd_c = ((r.pd/m.ω_h_c).^(-m.σ)) * sim.C
-    yd_c = max(r.yd - yd_k,0.00001)
+    yd_c = max.(r.yd - yd_k,0.00001)
     ym_c = ((sim.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c).^(-m.σ)) * sim.C
 
-    sim=merge(sim,(Yc = (sum(sim.measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ))) + m.ω_m_c*(ym_c.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1)),
+    sim=merge(sim,(Yc = (sum(sim.measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ))) + m.ω_m_c*(ym_c^((m.σ-1)/m.σ)))^(m.σ/(m.σ-1)),)) #PENDING: FOR SOME REASON ym_c has negative values
 
 
-    # Phi_h
+    # ϕ_h
 
-    ϕ_h = (m.ω_h_c^m.σ)*sim.Yc + ((m.ω_h_k*m.Pk)^m.σ)*sim.Yk,
+    sim=merge(sim,(ϕ_h = (m.ω_h_c^m.σ)*sim.Yc + ((m.ω_h_k*m.Pk)^m.σ)*sim.Yk,
 
     ### Compute price and quantity indexes
 
@@ -483,13 +483,13 @@ function KLS3_simulate(m,s,r,guessM)
      PdYd =sum(sim.measure[r.pd.>0].*r.pd[r.pd.>0].*r.yd[r.pd.>0]),
 
      #Exports
-     PxYx = sim.ξ*sum(sim.measure[r.pf.>0].*r.pf[r.pf.>0].*r.yf[r.pf.>0]),
-     PxYx_USD = sim.PxYx/sim.ξ,
+     PxYx = sim.ξ*sum(sim.measure[r.pf.>0].*r.pf[r.pf.>0].*r.yf[r.pf.>0])))
+     sim=merge(sim,(PxYx_USD = sim.PxYx/sim.ξ,
 
      #Imports
     PmcYmc = sim.ξ*(1+m.τ_m_c)*m.Pm_c*ym_c,
-    PmkYmk =  sim.ξ*(1+m.τ_m_k)*m.Pm_k*ym_k,
-    PmYm = sim.PmcYmc + sim.PmkYmk,
+    PmkYmk =  sim.ξ*(1+m.τ_m_k)*m.Pm_k*ym_k))
+    sim=merge(sim,(PmYm = sim.PmcYmc + sim.PmkYmk,
 
     # Tariffs Income (T)
     tariffsincome=sim.ξ*m.τ_m_c*m.Pm_c*ym_c + sim.ξ*m.τ_m_k*m.Pm_k*ym_k,
@@ -497,42 +497,42 @@ function KLS3_simulate(m,s,r,guessM)
     ### Compute aggregate variables needed to evaluate market clearing conditions
 
     #Labor and capital
-    K = sum(sim.measure.*(r.k)), #recall that already multiplied by oc_choice and sec_choice
-    inv_agg = m.δ*sim.K,
+    K = sum(sim.measure.*(r.k)))) #recall that already multiplied by oc_choice and sec_choice
+    sim=merge(sim,(inv_agg = m.δ*sim.K,
     N = sum(sim.measure.*(r.n))))  # total labor demand for production
 
     # Fixed costs already corrected by sim.w if needed
-    sim=merge(sim,(FC =  sum(sim.measure.*r.e.*r.F_mat),
+    sim=merge(sim,(FC =  sum(sim.measure.*r.e.*r.F_mat),))
 
     # Total labor demand
-    N = sim.N+((sim.FC)/sim.w)*(1-s.fcost_fgoods),
+    sim=merge(sim,(N = sim.N+((sim.FC)/sim.w)*(1-s.fcost_fgoods),
 
 
     ### Market clearing conditions
 
     #Labor
-    n_supply = 1,
-    n_demand = sim.N,
-    #mc_n = ((1+sim.n_demand)/(1+sim.n_supply))-1, #10*log.((1+sim.n_demand)/(1+sim.n_supply)),
-    mc_n = log.(sim.n_demand/sim.n_supply),
+    n_supply = 1))
+    sim=merge(sim,(n_demand = sim.N,))
+    #sim=merge(sim,(mc_n = ((1+sim.n_demand)/(1+sim.n_supply))-1, #10*log.((1+sim.n_demand)/(1+sim.n_supply)),))
+    sim=merge(sim,(mc_n = log.(sim.n_demand/sim.n_supply),
 
     #Assets
     #This market clearing condition is the result of reformulating the debt market clearing condition
     #In the original model, the sum of debt has to equal zero. Once the model is reformulated, this condition becomes the one below.
     a_supply = sum(sim.measure.*r.a_grid_mat),
-    a_demand = sim.K,
-    #mc_a = ((1+sim.a_demand)/(1+sim.a_supply)) - 1, #10*log.((1+sim.a_demand)/(1+sim.a_supply)),
-    mc_a = log.(sim.a_demand/sim.a_supply),
+    a_demand = sim.K))
+    #sim=merge(sim,(mc_a = ((1+sim.a_demand)/(1+sim.a_supply)) - 1, #10*log.((1+sim.a_demand)/(1+sim.a_supply)),))
+    sim=merge(sim,(mc_a = log.(sim.a_demand/sim.a_supply),
 
     #Final goods
     #mc_y = ((1+sim.y_demand)/(1+sim.y_supply))-1, #10*log.((1+sim.y_demand)/(1+sim.y_supply)),
     y_supply = sim.Yc,
-    y_demand = sim.C,
-    mc_y = log.(sim.y_demand/sim.y_supply),
+    y_demand = sim.C)) #PENDING: Apparently has negative entries
+    sim=merge(sim,(mc_y = log.(sim.y_demand/sim.y_supply),
 
     k_supply = sim.Yk,
-    k_demand = sim.I + sim.M + sim.FC*s.fcost_fgoods,
-    mc_k = log.(sim.k_demand/sim.k_supply)))
+    k_demand = sim.I + sim.M + sim.FC*s.fcost_fgoods))
+    sim=merge(sim,(mc_k = log.(sim.k_demand/sim.k_supply),))
 
 
 
@@ -543,7 +543,7 @@ function KLS3_simulate(m,s,r,guessM)
     #
 
     if s.tariffsincome==1
-        sim=merge(sim,(mc_Yk_belief = log.(sim.Yk/m.Yk),
+        sim=merge(sim,(mc_Yk_belief = log.(sim.Yk/m.Yk), #PENDING: apparently one of the Yks have negative entries
         mc_tariffs_belief = log.(sim.tariffsincome/m.tariffsincome),
         mc_y_belief = ((1+sim.Yc)/(1+m.Yc))-1))
 
@@ -555,11 +555,11 @@ function KLS3_simulate(m,s,r,guessM)
 
     ## Main statistics
 
-    sim=merge(sim,(Sales = sim.PdYd + sim.PxYx, #sim.PxYx is already denominated in units of the domestic final good
-    GDP = sim.Sales - sim.M*m.Pk, # Value Added
+    sim=merge(sim,(Sales = sim.PdYd + sim.PxYx,)) #sim.PxYx is already denominated in units of the domestic final good
+    sim=merge(sim,(GDP = sim.Sales - sim.M*m.Pk, # Value Added
     gross_output_ratio = (sim.ϕ_h)/(m.ξ*m.Yf),
-    gross_output_ratio_2 = (m.Yc+m.Pk*m.Yk)/(m.ξ*m.Yf),
-    gross_output_ratio_3 =     sim.GDP/(sim.ξ*m.Yf),
+    gross_output_ratio_2 = (m.Yc+m.Pk*m.Yk)/(m.ξ*m.Yf)))
+    sim=merge(sim,(gross_output_ratio_3 =  sim.GDP/(sim.ξ*m.Yf),
 
     X_GDP = sim.PxYx/sim.GDP, # Exports, not value added exports
     D_GDP = sim.PdYd/sim.GDP,
@@ -570,8 +570,8 @@ function KLS3_simulate(m,s,r,guessM)
     Absorption = sim.C+sim.I*sim.Pk,
 
 
-    NX_GDP = (sim.PxYx-sim.PmYm)/sim.GDP, #exports are pre-tax, imports include import tax
-    NX_Absorption = (sim.PxYx-sim.PmYm)/sim.Absorption, #exports are pre-tax, imports include import tax
+    NX_GDP = (sim.PxYx-sim.PmYm)/sim.GDP)) #exports are pre-tax, imports include import tax
+    sim=merge(sim,(NX_Absorption = (sim.PxYx-sim.PmYm)/sim.Absorption, #exports are pre-tax, imports include import tax
     NX_Sales = (sim.PxYx-sim.PmYm)/sim.Sales,
 
     X_D = sim.PxYx/sim.PdYd,
@@ -592,11 +592,11 @@ function KLS3_simulate(m,s,r,guessM)
     InvGDP=sim.inv_agg*sim.Pk/sim.GDP))
 
     # Every credit statistic
-    r=merge(r,(d = (1+m.r)*(m.Pk*r.k - r.a),))
-    sim=merge(sim,(credit = sum(sim.measure.*max(r.d,0)), # only entrepreneurs/firms (for workers r.d is negative)
-    credit_gdp = sim.credit/sim.GDP,
-    d_agg = sum(sim.measure.*r.d), # for both firms and workers
-    NFA_GDP = -sim.d_agg/sim.GDP,
+    r=merge(r,(d = (1+m.r)*(m.Pk*r.k .- r.a),))
+    sim=merge(sim,(credit = sum(sim.measure.*max.(r.d,0)),)) # only entrepreneurs/firms (for workers r.d is negative)
+    sim=merge(sim,(credit_gdp = sim.credit/sim.GDP,
+    d_agg = sum(sim.measure.*r.d))) # for both firms and workers
+    sim=merge(sim,(NFA_GDP = -sim.d_agg/sim.GDP,
 
     credit_sales = sim.credit/(sim.PdYd + sim.PxYx),
 
@@ -607,36 +607,34 @@ function KLS3_simulate(m,s,r,guessM)
     sales = sales_d+sales_x
     x_share = sales_x./sales
 
-    x_share_av =  NaNMath.sum(sim.measure.*r.e.* x_share) / sum(sim.measure.*r.e)
-    x_share_av[isnan.(x_share_av)].=1
+    sim=merge(sim,(x_share_av =  sum(filter(!isnan,sim.measure.*r.e.* x_share))./ sum(filter(!isnan,sim.measure.*r.e)),))
+    #sim.x_share_av[isnan.(sim.x_share_av)].=1  #Don't know the role of this, but it throws error in Julia given sim.x_share_av is a scalar
 
 
     SalesExporters = sum(sim.measure.*sales.*r.e)
-    x_share_wav =  NaNMath.sum(sim.measure.*r.e.*(sales./SalesExporters).*x_share)/ sum(sim.measure.*r.e.*(sales./SalesExporters))
-    x_share_wav[isnan.(x_share_wav)].=1
-
-    sim=merge(sim,(x_share_av=x_share_av,x_share_wav=x_share_wav))
+    sim=merge(sim,(x_share_wav =  Base.sum(filter(!isnan,sim.measure.*r.e.*(sales./SalesExporters).*x_share))/ sum(sim.measure.*r.e.*(sales./SalesExporters)),))
+    #sim.x_share_wav[isnan.(x_share_wav)].=1 #Don't know the role of this, but it throws error in Julia given sim.x_share_av is a scalar
 
     ln_sales = log.(sales)
     ln_sales_d = log.(sales_d)
     ln_sales_ind=map(!,isnan.(ln_sales))
     ln_sales_d_ind=map(!,isnan.(ln_sales_d))
 
-    sim=merge(sim,(ln_sales_mean = sum(sim.measure(ln_sales_ind).* ln_sales(ln_sales_ind)),
-    ln_sales_sd = sqrt.(sum(sim.measure(ln_sales_ind) .* (ln_sales(ln_sales_ind) - sim.ln_sales_mean).^2 )),
+    sim=merge(sim,(ln_sales_mean = sum(sim.measure[ln_sales_ind].* ln_sales[ln_sales_ind]),))
+    sim=merge(sim,(ln_sales_sd = sqrt.(sum(sim.measure[ln_sales_ind] .* (ln_sales[ln_sales_ind] .- sim.ln_sales_mean).^2)),
 
-    ln_sales_d_mean = sum(sim.measure(ln_sales_d_ind) .* ln_sales_d(ln_sales_d_ind)),
-    ln_sales_d_sd = sqrt.(sum(sim.measure(ln_sales_d_ind) .* (ln_sales_d(ln_sales_d_ind) - sim.ln_sales_d_mean).^2))))
+    ln_sales_d_mean = sum(sim.measure[ln_sales_d_ind] .* ln_sales_d[ln_sales_d_ind])))
+    sim=merge(sim,(ln_sales_d_sd = sqrt.(sum(sim.measure[ln_sales_d_ind] .* (ln_sales_d[ln_sales_d_ind] .- sim.ln_sales_d_mean).^2)),))
 
     sales_mean = sum(sim.measure.*sales)
-    sim=merge(sim,(sales_sd = sqrt.(sum(sim.measure .* (sales - sales_mean).^2 )),))
+    sim=merge(sim,(sales_sd = sqrt.(sum(sim.measure .* (sales .- sales_mean).^2 )),))
 
     sales_d_mean = sum(sim.measure .*sales_d)
-    sim=merge(sim,(sales_d_sd = sqrt.( sum(sim.measure .* (sales_d - sales_d_mean).^2 )),))
+    sim=merge(sim,(sales_d_sd = sqrt.( sum(sim.measure .* (sales_d .- sales_d_mean).^2 )),))
 
-    sim=merge(sim,(sales_avg_nx = sum(sim.measure.*(1-r.e).*sales) / sum(sim.measure.*(1-r.e)),
-    labor_avg_nx = sum(sim.measure.*(1-r.e).*(r.n )) / sum(sim.measure.*(1-r.e)),
-    sales_d_avg_nx = sim.sales_avg_nx,
+    sim=merge(sim,(sales_avg_nx = sum(sim.measure.*(1 .-r.e).*sales) / sum(sim.measure.*(1 .-r.e)),
+    labor_avg_nx = sum(sim.measure.*(1 .-r.e).*(r.n )) / sum(sim.measure.*(1 .-r.e))))
+    sim=merge(sim,(sales_d_avg_nx = sim.sales_avg_nx,
 
     sales_avg_x = sum(sim.measure.*r.e.*sales)/ sum(sim.measure.*r.e),
     labor_avg_x = ((sim.FC/sim.w)*(1-s.fcost_fgoods) + sum(sim.measure.*r.e.*(r.n))) / sum(sim.measure.*r.e),
@@ -644,18 +642,18 @@ function KLS3_simulate(m,s,r,guessM)
     # These include fixed costs
     labor_tot = sim.N,  # total labor demand for production
     labor_tot_x = (sim.FC/sim.w)*(1-s.fcost_fgoods)  + sum(sim.measure.*r.e.*(r.n)),
-    labor_tot_nx =  sum(sim.measure.*(1-r.e).*(r.n)),
-    labor_tot_w = sum(sim.measure),
+    labor_tot_nx =  sum(sim.measure.*(1 .-r.e).*(r.n)),
+    labor_tot_w = sum(sim.measure)))
 
-    labor_x_share = sim.labor_tot_x/sim.labor_tot,
+    sim=merge(sim,(labor_x_share = sim.labor_tot_x/sim.labor_tot,
     labor_nx_share = sim.labor_tot_nx/sim.labor_tot,
 
     sales_d_avg_x = sum(sim.measure.*r.e.*sales_d)/ sum(sim.measure.*r.e),
 
     xpremium_sales = sim.sales_avg_x/sim.sales_avg_nx,
-    xpremium_labor = sim.labor_avg_x/sim.labor_avg_nx,
+    xpremium_labor = sim.labor_avg_x/sim.labor_avg_nx))
 
-    xpremium_sales_d = sim.sales_d_avg_x/sim.sales_d_avg_nx,
+    sim=merge(sim,(xpremium_sales_d = sim.sales_d_avg_x/sim.sales_d_avg_nx,
 
     ln_sales_sd_mean = sim.ln_sales_sd /  sim.ln_sales_mean,
     ln_sales_d_sd_mean = sim.ln_sales_d_sd /  sim.ln_sales_d_mean,
@@ -663,12 +661,12 @@ function KLS3_simulate(m,s,r,guessM)
     sales_d_sd_mean = sim.sales_d_sd /  sales_d_mean))
 
     labor_mean= sum(sim.measure.*(r.n+ (r.e.*r.F_mat./sim.w )*(1-s.fcost_fgoods)))
-    labor_sd=sqrt.(sum(sim.measure.*( r.n+ (r.e.*r.F_mat./sim.w)*(1-s.fcost_fgoods) - labor_mean ).^2))
+    labor_sd=sqrt.(sum(sim.measure.*( r.n+ (r.e.*r.F_mat./sim.w)*(1-s.fcost_fgoods) .- labor_mean ).^2))
     sim=merge(sim,(labor_sd_mean = labor_sd /  labor_mean,
 
 
    # Average productivity
-    avg_productivity1 = ((sum(sim.measure.*(r.z_grid_mat).^(m.sigma-1)))/sum(sim.measure)).^(1/(m.σ - 1)),
+    avg_productivity1 = ((sum(sim.measure.*(r.z_grid_mat).^(m.σ-1)))/sum(sim.measure)).^(1/(m.σ - 1)),
     avg_productivity2 =  sum(sim.measure.*sales.* r.z_grid_mat) / sum(sim.measure .* sales),
     avg_productivity3 =  sum(sim.measure.*sales_d.* r.z_grid_mat) / sum(sim.measure .* sales_d),
 
@@ -694,8 +692,8 @@ function KLS3_GE_par!(F,x,m,s,r)
 
 #Guessed prices
 
-m=merge(m,(w = exp(x[1]),
-Φ_h = exp(x[2]),
+m = merge(m,(w = exp(x[1]),
+ϕ_h = exp(x[2]),
 ξ = exp(x[3]),
 Pk = exp(x[4])))
 m=merge(m,(Pk_lag = m.Pk,))
@@ -705,12 +703,11 @@ m=merge(m,(Pk_lag = m.Pk,))
 
 # Tariff income (initialized to 0)
 if s.tariffsincome == 1
-    Yk = exp(x[5])
-    Yc = exp(x[2])
-    m=merge(m,(Yk=Yk,Yc=Yc))
-    m=merge(m,(Φ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk,))
+    m=merge(m,(Yk = exp(x[5]),
+    Yc = exp(x[2])))
+    m=merge(m,(ϕ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk,))
 
-    #Yc =  (m.Φ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
+    #Yc =  (m.ϕ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
     Yc = m.Yc
     ym_c = Yc*(m.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c)^(-m.σ)
     ym_k = m.Yk*(m.Pk^m.σ)*(m.ξ*m.Pm_k*(1+m.τ_m_k)/m.ω_m_k)^(-m.σ)
@@ -724,7 +721,7 @@ end
 #Display
  if s.display==1
      show("------------------------------------------------")
-     show("Guesses: Φ_h=$(m.Φ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
+     show("Guesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
  end
 
 
@@ -742,7 +739,7 @@ end
 # PENDING (PERSISTENT)
 # persistent guessV
 # if isempty(guessV)
-#    guessV=r.pi_nx;
+#    guessV=r.π_nx;
 # end
 guessV=r.π_nx
 
@@ -828,7 +825,7 @@ function KLS3_GE_par(x,m,s,r)
 #Guessed prices
 
 m=merge(m,(w = exp(x[1]),
-Φ_h = exp(x[2]),
+ϕ_h = exp(x[2]),
 ξ = exp(x[3]),
 Pk = exp(x[4]),
 
@@ -841,9 +838,9 @@ Pk_lag = m.Pk))
 if s.tariffsincome == 1
     m.Yk = exp(x[5])
     m.Yc = exp(x[2])
-    m.Φ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk
+    m.ϕ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk
 
-    #Yc =  (m.Φ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
+    #Yc =  (m.ϕ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
     Yc = m.Yc
     ym_c = Yc*(m.ξ*m.Pm_c*(1+m.τ_m_c)/m.ω_m_c)^(-m.σ)
     ym_k = m.Yk*(m.Pk^m.σ)*(m.ξ*m.Pm_k*(1+m.τ_m_k)/m.ω_m_k)^(-m.σ)
@@ -857,7 +854,7 @@ end
 #Display
  if s.display==1
      show("------------------------------------------------")
-     show("Guesses: Φ_h=$(m.Φ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
+     show("Guesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
  end
 
 
@@ -875,7 +872,7 @@ end
 # PENDING (PERSISTENT)
 # persistent guessV
 # if isempty(guessV)
-#    guessV=r.pi_nx;
+#    guessV=r.π_nx;
 # end
 guessV=r.π_nx
 

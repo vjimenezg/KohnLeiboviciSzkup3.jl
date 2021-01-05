@@ -241,7 +241,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         ϕhguess= (m.ω_h_c.^m.σ).*Ycguess + ((m.ω_h_k.*Pkguess).^m.σ).*Ykguess
 
     else
-        Φhguess = [m.ϕht[1] exp.(Guess[1:s.N-2]) m.ϕht[s.N]]
+        ϕhguess = [m.ϕht[1] exp.(Guess[1:s.N-2]) m.ϕht[s.N]]
 
     end
 

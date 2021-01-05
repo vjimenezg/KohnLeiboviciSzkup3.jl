@@ -52,17 +52,17 @@ include("functions_trans.jl")
 
         if s.load_prices ==0
             m=merge(m,(w = 0.035690209553739,
-            Φ_h = 0.16403,
+            ϕ_h = 0.16403,
             ξ =0.369060692554216,
             Pk = 0.975043532756500))
         elseif s.load_prices ==1
             @load "KLS3_Prices.jld2" Prices
             m=merge(m,(w = Prices[2,1],
-            Φ_h = Prices[1,1],
+            ϕ_h = Prices[1,1],
             ξ = Prices[3,1],
             Pk = Prices[4,1]))
         end
-        solver=(x0 = [m.w m.Φ_h m.ξ m.Pk],)
+        solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
 
     end
 
@@ -86,7 +86,7 @@ include("functions_trans.jl")
         m=merge(m,(r = m.rv[end],
         Pf = m.Pfv[end],
         Yf = m.Yfv[end],
-        β=m.β_v[end],
+        β = m.β_v[end],
         θ = m.θ_v[end],
         τ = m.τ_v[end],
         δ = m.δ_v[end],
@@ -138,11 +138,12 @@ include("functions_trans.jl")
                 Pk = m_0.Pk))
             end
 
-            solver=(x0 = [m.w m.Φ_h m.ξ m.Pk],)
+            solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
         end
+
         if s.GE_end == 1  && s.PE == 0
             results_GE =
-             nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, s.show_trace_GE)
+             nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
             solver=merge(solver,(z=results_GE.zero,))
             mcc_end, m_end, r_end, s_end, sim_end = KLS3_GE_par(solver.z,m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
