@@ -18,7 +18,7 @@ using NamedTupleTools, Parameters # named tuples
 #using Roots
 using QuantEcon
 using Base
-using NaNMath
+#using NaNMath
 using Dates
 using JLD2
 #using GMT
@@ -65,7 +65,7 @@ include("functions_trans.jl")
         solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
 
     end
-
+@time begin
     if s.GE == 1
         results_GE =
          nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
@@ -76,7 +76,7 @@ include("functions_trans.jl")
         mcc_0, m_0, r_0, s_0, sim_0 =KLS3_GE_par(log.(solver.x0),m,s,r)
         solver=merge(solver,(mcc_0=mcc_0,))
     end
-
+end
 
 
 # Step 2: Solve final steady state
@@ -256,7 +256,7 @@ include("functions_trans.jl")
     end
 
  ## Welfare analysis
- if s.welfare==1 #PENDING
+ if s.welfare==1 #PENDING (figures)
 include("welfare.jl")
  end
 

@@ -415,8 +415,8 @@ function KLS3_simulate_trans(m,s,rt,Guess)
             sim.inv_agg[t,1] = m.δ*sim.K[t,1]
         end
 
-        sim.I[t,1] = max(sim.inv_agg[t,1],0); #Demand for new investment goods
-        sim.M[t,1] = sum(measure.*mat);
+        sim.I[t,1] = max(sim.inv_agg[t,1],0) #Demand for new investment goods
+        sim.M[t,1] = sum(measure.*mat)
 
         yd_k = ((pd/(m.Pk*m.ω_h_k)).^(-m.σ)) * (sim.I[t,1] + sim.M[t,1])
         ym_k = ((m.ξ*m.Pm_k*(1+m.τ_m_k)/(m.Pk*m.ω_m_k)).^(-m.σ)) * (sim.I[t,1] + sim.M[t,1])
@@ -561,7 +561,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
             sales_mean = sum(measure.*sales)
             sim.sales_sd[t,1] = sqrt.(sum(measure .* (sales .- sales_mean).^2))
 
-            sales_d_mean = sum(measure .* sales_d) ;
+            sales_d_mean = sum(measure .* sales_d)
             sim.sales_d_sd[t,1] = sqrt.(sum(measure .* (sales_d .- sales_d_mean).^2))
 
             sim.sales_avg_nx[t,1] = sum(measure.*(1 .-e).*sales) / sum(measure.*(1 .-e))
@@ -572,7 +572,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
             sim.labor_avg_x[t,1] = ((sim.FC[t,1]/m.w)*(1-s.fcost_fgoods) + sum(measure.*e.*(n))) / sum(measure.*e)
 
         # These include fixed costs
-            sim.labor_tot[t,1] = sim.N[t,1];  # total labor demand for production
+            sim.labor_tot[t,1] = sim.N[t,1]  # total labor demand for production
             sim.labor_tot_x[t,1] = (sim.FC[t,1]/m.w)*(1-s.fcost_fgoods)  + sum(measure.*e.*(n))
             sim.labor_tot_nx[t,1] =  sum(measure.*(1 .-e).*(n))
             sim.labor_tot_w[t,1] = sum(measure)

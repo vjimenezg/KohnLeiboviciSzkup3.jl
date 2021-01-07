@@ -44,7 +44,7 @@
             end
         end
 
-        diff_M = sum(abs.(Mnew-Mold));         # new criterion
+        diff_M = sum(abs.(Mnew-Mold))         # new criterion
 
         iter = iter + 1
 
@@ -68,7 +68,7 @@ function KLS3_staticproblem(m,s,r)
 ### Useful objects
 
         #Assets
-        r=merge(r,(a_grid_mat = r.a_grid*ones(1,s.z_grid_size),
+        r=merge(r,(a_grid_mat = r.a_grid'*ones(1,s.z_grid_size),
 
         #Productivity
         z_grid_mat = r.z))
@@ -143,15 +143,6 @@ function KLS3_staticproblem(m,s,r)
 
         end
 
-        #r=merge(r,(k_x = k_x,
-        #n_x = n_x,
-        #m_x = m_x,
-        #yd_x = yd_x,
-        #yf_x = yf_x,
-        #pd_x = pd_x,
-        #pf_x = pf_x,
-        #const_x = const_x))
-
     #Profits
         r=merge(r,(π_x = r.pd_x.*r.yd_x .+ m.ξ*r.pf_x.*r.yf_x .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x .- m.w*r.n_x .- m.w*m.F_base .- m.Pk*r.m_x,))
 
@@ -208,14 +199,6 @@ function KLS3_staticproblem(m,s,r)
             r.pf_nx[r.k_const .< r.k_nx_u] .= r.pf_nx_c[r.k_const .< r.k_nx_u]
         end
 
-        #r=merge(r,(k_nx = k_nx,
-        #n_nx = n_nx,
-        #m_nx = m_nx,
-        #yd_nx = yd_nx,
-        #yf_nx = yf_nx,
-        #pd_nx = pd_nx,
-        #pf_nx = pf_nx,
-        #const_nx = const_nx))
 
     #Profits
         r=merge(r,(π_nx = r.pd_nx.*r.yd_nx .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_nx .- m.w*r.n_nx .- m.Pk*r.m_nx,))
@@ -224,10 +207,10 @@ function KLS3_staticproblem(m,s,r)
         r=merge(r,(e=zeros(size(r.k_nx_u)),))
         r.e .= r.π_x .>= r.π_nx
 
-      r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = nothing, pd_x_c = nothing,  pf_x_c = nothing))
-       r=merge(r,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
-      r=merge(r,(n_nx_c = nothing, m_nx_c = nothing, yd_nx_c = nothing, yf_nx_c = nothing, pd_nx_c = nothing, pf_nx_c = nothing))
-       r=merge(r,(k_nx_u = nothing, n_nx_u = nothing, m_nx_u = nothing, yd_nx_u = nothing, yf_nx_u = nothing, pd_nx_u = nothing, pf_nx_u = nothing))
+      #r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = #nothing, pd_x_c = nothing,  pf_x_c = nothing))
+      # r=merge(r,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
+      #r=merge(r,(n_nx_c = nothing, m_nx_c = nothing, yd_nx_c = nothing, yf_nx_c = nothing, pd_nx_c = nothing, pf_nx_c = nothing))
+      # r=merge(r,(k_nx_u = nothing, n_nx_u = nothing, m_nx_u = nothing, yd_nx_u = nothing, yf_nx_u = nothing, pd_nx_u = nothing, pf_nx_u = nothing))
 
     return r
 
@@ -368,7 +351,7 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             # Accelerator
 
             # Consumption and utility
-            c = profits .+ r.a_grid.*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
+            c = profits .+ r.a_grid'.*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
 
             u = ((c).^(1-m.γ))./(1-m.γ)
 
@@ -427,16 +410,16 @@ function KLS3_simulate(m,s,r,guessM)
 
     # Compute stationary measure across states
 
-     #guess= ;
+     #guess=
 
 
 #      if exist('sim.measure','var')
 #
-#          guessM=sim.measure;
+#          guessM=sim.measure
 #
 #      else
 #
-#         guessM=Mnew;
+#         guessM=Mnew
 #
 #      end
 
@@ -739,7 +722,7 @@ end
 # PENDING (PERSISTENT)
 # persistent guessV
 # if isempty(guessV)
-#    guessV=r.π_nx;
+#    guessV=r.π_nx
 # end
 guessV=r.π_nx
 
@@ -751,10 +734,10 @@ guessV = r.v
 # PENDING (PERSISTENT)
 # persistent guessM
 # if isempty(guessM)
-#    guessM=vcat(r.z_π,zeros(s.a_grid_size-1,s.z_grid_size)) #Initialize
+#    guessM=vcat(r.z_π',zeros(s.a_grid_size-1,s.z_grid_size)) #Initialize
 # end
 
-guessM=vcat(r.z_π,zeros(s.a_grid_size-1,s.z_grid_size))
+guessM=vcat(r.z_π',zeros(s.a_grid_size-1,s.z_grid_size))
 
 
 sim,r1,s1 = KLS3_simulate(m,s,r,guessM)
@@ -827,18 +810,18 @@ function KLS3_GE_par(x,m,s,r)
 m=merge(m,(w = exp(x[1]),
 ϕ_h = exp(x[2]),
 ξ = exp(x[3]),
-Pk = exp(x[4]),
+Pk = exp(x[4])))
 
-Pk_lag = m.Pk))
+m=merge(m,(Pk_lag = m.Pk,))
 
 
 ### Solution
 
 # Tariff income (initialized to 0)
 if s.tariffsincome == 1
-    m.Yk = exp(x[5])
-    m.Yc = exp(x[2])
-    m.ϕ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk
+    m=merge(m,(Yk = exp(x[5]),
+    Yc = exp(x[2])))
+    m=merge(m,(ϕ_h = (m.ω_h_c^m.σ)*m.Yc + ((m.ω_h_k*m.Pk)^m.σ)*m.Yk,))
 
     #Yc =  (m.ϕ_h - ( m.ω_m_k*m.Pk)^m.σ*m.Yk)/( m.ω_m_c^m.σ)
     Yc = m.Yc
@@ -846,23 +829,22 @@ if s.tariffsincome == 1
     ym_k = m.Yk*(m.Pk^m.σ)*(m.ξ*m.Pm_k*(1+m.τ_m_k)/m.ω_m_k)^(-m.σ)
 
     if s.tariffsincome_PE==0
-        m.tariffsincome = m.τ_m_c*m.ξ*m.Pm_c*ym_c + m.τ_m_k*m.ξ*m.Pm_k*ym_k
+        m=merge(m,(tariffsincome = m.τ_m_c*m.ξ*m.Pm_c*ym_c + m.τ_m_k*m.ξ*m.Pm_k*ym_k,))
     end
 
 end
 
 #Display
  if s.display==1
-     show("------------------------------------------------")
      show("Guesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
  end
 
 
  #Fixed costs
  if s.fcost_fgoods==0 # If in units of labor
-     m.F     = m.w*m.F_base;
+     m=merge(m,(F= m.w*m.F_base,))
   else
-     m.F     = m.F_base;
+     m=merge(m,(F = m.F_base,))
  end
 
  #Static problems for tradable and nontradable sectors
@@ -872,7 +854,7 @@ end
 # PENDING (PERSISTENT)
 # persistent guessV
 # if isempty(guessV)
-#    guessV=r.π_nx;
+#    guessV=r.π_nx
 # end
 guessV=r.π_nx
 
@@ -884,10 +866,10 @@ guessV = r.v
 # PENDING (PERSISTENT)
 # persistent guessM
 # if isempty(guessM)
-#    guessM=vcat(r.z_π,zeros(s.a_grid_size-1,s.z_grid_size)) #Initialize
+#    guessM=vcat(r.z_π',zeros(s.a_grid_size-1,s.z_grid_size)) #Initialize
 # end
 
-guessM=vcat(r.z_π,zeros(s.a_grid_size-1,s.z_grid_size))
+guessM=vcat(r.z_π',zeros(s.a_grid_size-1,s.z_grid_size))
 
 sim,r1,s1 = KLS3_simulate(m,s,r,guessM)
 r=merge(r,r1)
@@ -902,7 +884,7 @@ guessM=sim.measure
     elseif s.tariffsincome==1
         mcc = [sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_Yk_belief]
         # mcc = [sim.mc_n sim.mc_y sim.mc_y_belief sim.mc_k sim.mc_tariffs_belief]
-        sim=merge(sim,(mcc = F,))
+        sim=merge(sim,(mcc = mcc,))
     end
 
 #Display

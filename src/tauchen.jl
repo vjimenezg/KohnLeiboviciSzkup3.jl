@@ -1,13 +1,20 @@
 function tauchen(n::Integer,ρ::Real, σ_e::Real, μ=zero(typeof(ρ)),c::Real=4,z_power::Real=1)
 
+#Standard deviation of stationaty process y (and discrete process z)
 σ_z=σ_e/sqrt(1-ρ^2)
+
+#Range
 r=(2*σ_z)*c
+
+#Solve for values of discrete state space
 z_1 = μ - c*σ_z
 z_end = μ + c*σ_z
 z = (LinRange(0,1,n).^(z_power)).*(z_end-z_1) .+ z_1
 z = z'
 
+#Construct midpoints m(i), i=1...n-1
 m = (z[2:n]+z[1:n-1])/2
+
 P = zeros(n,n)
 d=Distributions.Normal()
 for i=1:n

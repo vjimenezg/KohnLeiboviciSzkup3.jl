@@ -45,7 +45,7 @@ m = (θ = 0.20541136, #Collateral constraint
     log_z_σ = 0.15652825, #Standard deviation of log-normal productivity distribution
 α_m=0.5,
 β=0.83500441,
-σ = 4.0,
+σ=4.0,
 γ=2.0,
 α=0.6,
 δ=0.1,
@@ -58,15 +58,15 @@ z_mean=1.0,
 ω_m_c = 0.20904358,
 ω_h_k = 1,
 ω_m_k = 0.28722687,
-Yf = 10, #/((1+m.tau_x)^(-m.sigma)); #Output in the rest of the world
+Yf = 10, #/((1+m.τ_x)^(-m.σ)); #Output in the rest of the world
 Pf = 1.0, #Price index in the rest of the world
-Pm_c = 1.0, #/(1+m.tau_m); #Price index of goods imported from the rest of the world
+Pm_c = 1.0, #/(1+m.τ_m); #Price index of goods imported from the rest of the world
 Pm_k = 1.0,
 ω_m = 1.0, #Measure of varieties produced by the rest of the world # CHECK)
 r = 0.06,
 tariffsincome = 0.0,
 log_z_ρ = 0.9) #13.69641182/14.69641182, #Persistence
-m=merge(m,(log_z_μ = log.(m.z_mean)-(m.log_z_σ^2)*(1/((1-m.log_z_ρ^2)))*(1/2),)) #Normalize average productivity to 1, log_z_mu is the mean of log_z
+m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),)) #Normalize average productivity to 1, log_z_μ is the mean of log_z
 
 
 ##################### Transition Settings #####################
@@ -75,64 +75,64 @@ s=merge(s,(N=60,)) #length of transition
 #Shock to collateral constraint
 θ_old = m.θ
 θ_new = m.θ
-m=merge(m,(θ_v = vcat(θ_old*ones(2,1),θ_new*ones(s.N-2,1)),))
+m=merge(m,(θ_v = hcat(θ_old*ones(1,2),θ_new*ones(1,s.N-2)),))
 
 #Real interest rate shock
 r_old = m.r
 r_new = m.r
-m=merge(m,(rv = vcat(r_old*ones(2,1),r_new*ones(s.N-2,1)),))
+m=merge(m,(rv = hcat(r_old*ones(1,2),r_new*ones(1,s.N-2)),))
 
 
-# Beta shock
+# β shock
 β_old = m.β
 β_new = m.β
-m=merge(m,(β_v = vcat(β_old,β_new*ones(s.N-1,1)),))
+m=merge(m,(β_v = hcat(β_old*ones(1,1),β_new*ones(1,s.N-1)),))
 
 
-# delta shock
+# δ shock
 δ_old = m.δ
 δ_new = m.δ
-m=merge(m,(δ_v = vcat(δ_old,δ_new*ones(s.N-1,1)),))
+m=merge(m,(δ_v = hcat(δ_old*ones(1,1),δ_new*ones(1,s.N-1)),))
 
 # Foreign CPI shock
 Pf_old = m.Pf
 Pf_new = m.Pf
-m=merge(m,(Pfv = vcat(Pf_old,Pf_new*ones(s.N-1,1)),))
+m=merge(m,(Pfv = hcat(Pf_old*ones(1,1),Pf_new*ones(1,s.N-1)),))
 
 
 #Shock to pm
 # pm_old = m.Pm
 # pm_new = m.Pm
-# m=merge(m,(pm_v = vcat(pm_old,pm_new*ones(s.N-1,1)),))
+# m=merge(m,(pm_v = hcat(pm_old*ones(1,1),pm_new*ones(1,s.N-1)),))
 
 # Foreign output shock
 # Negative shock -> devaluation
 # Positive shock -> apreciation
 Yf_old = m.Yf
 Yf_new = m.Yf
-m=merge(m,(Yfv = vcat(Yf_old,Yf_new*ones(s.N-1,1)),))
+m=merge(m,(Yfv = hcat(Yf_old*ones(1,1),Yf_new*ones(1,s.N-1)),))
 
 
 #Shock to iceberg costs
 τ_old = m.τ
 τ_new = 1*m.τ
-m=merge(m,(τ_v = vcat(τ_old*ones(2,1),τ_new*ones(s.N-2,1)),))
+m=merge(m,(τ_v = hcat(τ_old*ones(1,2),τ_new*ones(1,s.N-2)),))
 
 
 #Shocks to tariffs
 τ_m_c_old = m.τ_m_c
 τ_m_c_new = 0.375*m.τ_m_c
-m=merge(m,(τ_m_c_v = vcat(τ_m_c_old,τ_m_c_new*ones(s.N-1,1)),))
+m=merge(m,(τ_m_c_v = hcat(τ_m_c_old*ones(1,1),τ_m_c_new*ones(1,s.N-1)),))
 
 
 τ_m_k_old = m.τ_m_k
 τ_m_k_new = 1*m.τ_m_k
-m=merge(m,(τ_m_k_v = vcat(τ_m_k_old,τ_m_k_new*ones(s.N-1,1)),))
+m=merge(m,(τ_m_k_v = hcat(τ_m_k_old*ones(1,1),τ_m_k_new*ones(1,s.N-1)),))
 
 
 τ_x_old = m.τ_x
 τ_x_new = 1*m.τ_x
-m=merge(m,(τ_x_v = vcat(τ_x_old,τ_x_new*ones(s.N-1,1)),))
+m=merge(m,(τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,s.N-1)),))
 
 
 ##################### Solution Options #####################
@@ -183,7 +183,7 @@ s=merge(s,(
 
         log_z_grid,z_P,z_π =tauchen(s.z_grid_size,m.log_z_ρ,m.log_z_σ,m.log_z_μ,4,s.z_grid_power)
 
-        r = (log_z_grid=log_z_grid, z_P=z_P, z_π=z_π)
+        r = (log_z_grid=log_z_grid, z_P=z_P, z_π=z_π')
         r=merge(r,(z_grid = exp.(r.log_z_grid'),
         z_grid_original = exp.(r.log_z_grid')))
 
@@ -196,5 +196,5 @@ s=merge(s,(
         #Asset grid
         a_grid_1 = LinRange(0,1,s.a_grid_size))) #Asset grid
         r=merge(r,(a_grid_2 = r.a_grid_1.^s.a_grid_power,))
-        r=merge(r,(a_grid = r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) .+ s.a_grid_lb,))
+        r=merge(r,(a_grid = (r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) .+ s.a_grid_lb)',))
         r=merge(r,(a_grid_vec = repeat(r.a_grid,1,length(r.a_grid)),))
