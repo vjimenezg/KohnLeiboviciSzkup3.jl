@@ -114,7 +114,7 @@ function KLS3_staticproblem(m,s,r)
         yf_x = r.yf_x_u,
         pd_x = r.pd_x_u,
         pf_x = r.pf_x_u,
-        const_x = zeros(size(r.k_x_u))))
+        const_x = BitArray(undef,size(r.k_x_u))))
 
     #Constrained
         if m.θ<1+m.r
@@ -133,15 +133,16 @@ function KLS3_staticproblem(m,s,r)
 
             #Solution
                 r.const_x .= r.k_const .< r.k_x_u
-                r.k_x[r.k_const .< r.k_x_u] .= r.k_const[r.k_const .< r.k_x_u]
-                r.n_x[r.k_const .< r.k_x_u] .= r.n_x_c[r.k_const .< r.k_x_u]
-                r.m_x[r.k_const .< r.k_x_u] .= r.m_x_c[r.k_const .< r.k_x_u]
-                r.yd_x[r.k_const .< r.k_x_u] .= r.yd_x_c[r.k_const .< r.k_x_u]
-                r.yf_x[r.k_const .< r.k_x_u] .= r.yf_x_c[r.k_const .< r.k_x_u]
-                r.pd_x[r.k_const .< r.k_x_u] .= r.pd_x_c[r.k_const .< r.k_x_u]
-                r.pf_x[r.k_const .< r.k_x_u] .= r.pf_x_c[r.k_const .< r.k_x_u]
+                r.k_x[r.const_x] .= r.k_const[r.const_x]
+                r.n_x[r.const_x] .= r.n_x_c[r.const_x]
+                r.m_x[r.const_x] .= r.m_x_c[r.const_x]
+                r.yd_x[r.const_x] .= r.yd_x_c[r.const_x]
+                r.yf_x[r.const_x] .= r.yf_x_c[r.const_x]
+                r.pd_x[r.const_x] .= r.pd_x_c[r.const_x]
+                r.pf_x[r.const_x] .= r.pf_x_c[r.const_x]
 
         end
+
 
     #Profits
         r=merge(r,(π_x = r.pd_x.*r.yd_x .+ m.ξ*r.pf_x.*r.yf_x .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x .- m.w*r.n_x .- m.w*m.F_base .- m.Pk*r.m_x,))
@@ -171,7 +172,7 @@ function KLS3_staticproblem(m,s,r)
         yf_nx = r.yf_nx_u,
         pd_nx = r.pd_nx_u,
         pf_nx = r.pf_nx_u,
-        const_nx = zeros(size(r.k_nx_u))))
+        const_nx = BitArray(undef,size(r.k_nx_u))))
 
     #Constrained
         if m.θ<1+m.r
@@ -190,14 +191,15 @@ function KLS3_staticproblem(m,s,r)
 
             #Solution
             r.const_nx .= r.k_const .< r.k_nx_u
-            r.k_nx[r.k_const .< r.k_nx_u] .= r.k_const[r.k_const .< r.k_nx_u]
-            r.n_nx[r.k_const .< r.k_nx_u] .= r.n_nx_c[r.k_const .< r.k_nx_u]
-            r.m_nx[r.k_const .< r.k_nx_u] .= r.m_nx_c[r.k_const .< r.k_nx_u]
-            r.yd_nx[r.k_const .< r.k_nx_u] .= r.yd_nx_c[r.k_const .< r.k_nx_u]
-            r.yf_nx[r.k_const .< r.k_nx_u] .= r.yf_nx_c[r.k_const .< r.k_nx_u]
-            r.pd_nx[r.k_const .< r.k_nx_u] .= r.pd_nx_c[r.k_const .< r.k_nx_u]
-            r.pf_nx[r.k_const .< r.k_nx_u] .= r.pf_nx_c[r.k_const .< r.k_nx_u]
+            r.k_nx[r.const_nx] .= r.k_const[r.const_nx]
+            r.n_nx[r.const_nx] .= r.n_nx_c[r.const_nx]
+            r.m_nx[r.const_nx] .= r.m_nx_c[r.const_nx]
+            r.yd_nx[r.const_nx] .= r.yd_nx_c[r.const_nx]
+            r.yf_nx[r.const_nx] .= r.yf_nx_c[r.const_nx]
+            r.pd_nx[r.const_nx] .= r.pd_nx_c[r.const_nx]
+            r.pf_nx[r.const_nx] .= r.pf_nx_c[r.const_nx]
         end
+
 
 
     #Profits
@@ -306,13 +308,13 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
 
      ###Initialize solution objects
-        v_new = guessV #r.π_nx
+        v_new = copy(guessV) #r.π_nx
         ap = zeros(Float64,size(v_new))
         ap_ind = zeros(Int64,size(v_new))
         c = zeros(Float64,size(v_new))
 
 
-        v_old = v_new
+        v_old = copy(v_new)
         v_diff = 1
         z_P=r.z_P
         a_grid=r.a_grid
@@ -325,8 +327,8 @@ function KLS3_dynamicproblem(m,s,r,guessV)
         iter = 0
         while v_diff>s.eps
 
-            iter = iter + 1
-            v_p=v_old'
+            iter +=1
+            v_p=copy(v_old')
 
             for j = 1:s.z_grid_size
 
@@ -337,9 +339,9 @@ function KLS3_dynamicproblem(m,s,r,guessV)
                     neg_c1_indexes = c1.<=0 #indices of a' for which consumption<0
                     u = (c1.^exponent)./exponent .+ neg_c1_indexes.*-1e50
 
-                    v,index_ap = findmax(u .+ v_pp)
+                     v,index_ap = findmax(u .+ v_pp)
 
-                    v_new[i,j] = v
+                      v_new[i,j] = v
                     ap_ind[i,j]=index_ap[2]
 
                 end
@@ -351,13 +353,13 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             # Accelerator
 
             # Consumption and utility
-            c = profits .+ r.a_grid'.*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap(:,:), the optimal asset choice
+             c = profits .+ r.a_grid'.*ones(1,s.z_grid_size).*(1+m.r) .- ap  # The key is ap[:,:], the optimal asset choice
 
             u = ((c).^(1-m.γ))./(1-m.γ)
 
             for g=1:s.ac_iter
                 for j = 1:s.z_grid_size
-                   v_new[:,j] = u[:,j] .+ (m.β * z_P[j,:]'*v_new[ap_ind[:,j],:])'
+                    v_new[:,j] = u[:,j] .+ (m.β * z_P[j,:]'*v_new[ap_ind[:,j],:]')'
 
                 end
 
@@ -365,8 +367,8 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             end
 
             # Convergence
-            v_diff = maximum(abs.(v_new-v_old))
-            v_old = v_new
+             v_diff = maximum(abs.(v_new-v_old))
+                v_old = copy(v_new)
 
             if mod(iter,100)==0
                 show("Delta V: $v_diff")
@@ -724,7 +726,7 @@ end
 # if isempty(guessV)
 #    guessV=r.π_nx
 # end
-guessV=r.π_nx
+guessV=copy(r.π_nx)
 
 #Dynamic problem and simulation (No sunk costs)
 r_dynamic=KLS3_dynamicproblem(m,s,r,guessV)
@@ -856,12 +858,12 @@ end
 # if isempty(guessV)
 #    guessV=r.π_nx
 # end
-guessV=r.π_nx
+guessV=copy(r.π_nx)
 
 #Dynamic problem and simulation (No sunk costs)
 r_dynamic=KLS3_dynamicproblem(m,s,r,guessV)
 r=merge(r,r_dynamic)
-guessV = r.v
+guessV = copy(r.v)
 
 # PENDING (PERSISTENT)
 # persistent guessM

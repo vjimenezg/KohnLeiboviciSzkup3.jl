@@ -8,7 +8,7 @@ module KohnLeiboviciSzkup3
 
 clearconsole()
 
-# Dependencies (commented the ones I'm not sure I need)
+# Dependencies (commented the ones I'm not sure I need yet)
 
 using LinearAlgebra
 # using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
@@ -65,6 +65,7 @@ include("functions_trans.jl")
         solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
 
     end
+
 @time begin
     if s.GE == 1
         results_GE =
