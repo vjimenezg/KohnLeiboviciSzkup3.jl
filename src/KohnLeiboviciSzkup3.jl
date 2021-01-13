@@ -80,6 +80,11 @@ include("functions_trans.jl")
 end
 
 
+    if s.tariffsincome_PE_flag==1
+        s=merge(s,(tariffsincome_PE = 1,))
+        m=merge(m,(tariffsincome = m_0.tariffsincome,))
+    end
+
 # Step 2: Solve final steady state
      if s.transition == 1
 
@@ -141,7 +146,7 @@ end
 
             solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
         end
-
+@time begin
         if s.GE_end == 1  && s.PE == 0
             results_GE =
              nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
@@ -152,7 +157,7 @@ end
             mcc_end, m_end, r_end, s_end, sim_end =KLS3_GE_par(log.(solver.x0),m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
         end
-
+        end
         # Real variables
         sim_end=merge(sim_end,(X_Laspeyres = sum(sim_end.measure.*m_0.ξ.*r_0.pf.*r_end.yf),
         D_Laspeyres = sum(sim_end.measure.* r_0.pd.*r_end.yd),
@@ -169,77 +174,74 @@ end
  measure= sim_0.measure)
  rt[s.N] = (r_end=r_end,
  measure= sim_end.measure)
- r_0=nothing
- r_end=nothing
+ #r_0=nothing
+ #r_end=nothing
 
  # Guess sequence of aggregate prices for N period, with N sufficiently large
  #ϕht = zeros(s.N,1)
- Pkt = zeros(s.N,1)
- wt = zeros(s.N,1)
- ξt = zeros(s.N,1)
- Ykt = zeros(s.N,1)
- Yct = zeros(s.N,1)
- tariffsincomet= zeros(s.N,1)
+ m=merge(m,(Pkt = zeros(s.N,1),
+ wt = zeros(s.N,1),
+ ξt = zeros(s.N,1),
+ Ykt = zeros(s.N,1),
+ Yct = zeros(s.N,1),
+ tariffsincomet= zeros(s.N,1)))
 
     if s.tariffsincome == 1
      # Guess
-     #ϕht[1] = m_0.ϕ_h
-     wt[1] = m_0.w
-     ξt[1] = m_0.ξ
-     Pkt[1] = m_0.Pk
-     Yct[1] = m_0.Yc
-     Ykt[1] = m_0.Yk
+     #m.ϕht[1] = m_0.ϕ_h
+     m.wt[1] = m_0.w
+     m.ξt[1] = m_0.ξ
+     m.Pkt[1] = m_0.Pk
+     m.Yct[1] = m_0.Yc
+     m.Ykt[1] = m_0.Yk
 
         if s.PE == 0
-         #ϕht[s.N]=m_end.ϕ_h
-         wt[s.N]=m_end.w
-         ξt[s.N]=m_end.ξ
-         Pkt[s.N]=m_end.Pk
-         Yct[s.N] = m_end.Yc
-         Ykt[s.N] = m_end.Yk
+         #m.ϕht[s.N]=m_end.ϕ_h
+         m.wt[s.N]=m_end.w
+         m.ξt[s.N]=m_end.ξ
+         m.Pkt[s.N]=m_end.Pk
+         m.Yct[s.N] = m_end.Yc
+         m.Ykt[s.N] = m_end.Yk
 
         elseif s.PE ==1
 
-         #ϕht[s.N]=m_0.ϕ_h
-         wt[s.N]=m_0.w
-         ξt[s.N]=m_0.ξ
-         Pkt[s.N]=m_end.Pk
-         Yct[s.N] = m_0.Yc
-         Ykt[s.N] = m_0.Yk
+         #m.ϕht[s.N]=m_0.ϕ_h
+         m.wt[s.N]=m_0.w
+         m.ξt[s.N]=m_0.ξ
+         m.Pkt[s.N]=m_end.Pk
+         m.Yct[s.N] = m_0.Yc
+         m.Ykt[s.N] = m_0.Yk
 
         end
 
 
      period2_change = 0.5
 
-     init =wt[1]+ (wt[s.N]-wt[1])*period2_change
-     expo =log.(wt[s.N]./init)./log.(s.N)   #wt[1]*(s.N)^expo=wt[s.N] =>expo=log.(wt[s.N]/wt[1])/log.(s.N)
-     wt[2:s.N-1]=init*(2:s.N-1).^expo
+     init =m.wt[1]+ (m.wt[s.N]-m.wt[1])*period2_change
+     expo =log.(m.wt[s.N]./init)./log.(s.N)   #m.wt[1]*(s.N)^expo=m.wt[s.N] =>expo=log.(m.wt[s.N]/m.wt[1])/log.(s.N)
+     m.wt[2:s.N-1].=init*(2:s.N-1).^expo
 
-     init =Yct[1]+ (Yct[s.N]-Yct[1])*period2_change
-     expo =log.(Yct[s.N]./init)./log.(s.N) #wt[1]*(s.N)^expo=wt[s.N] =>expo=log.(wt[s.N]/wt[1])/log.(s.N)
-     Yct[2:s.N-1]=init*(2:s.N-1).^expo
+     init =m.Yct[1]+ (m.Yct[s.N]-m.Yct[1])*period2_change
+     expo =log.(m.Yct[s.N]./init)./log.(s.N) #m.wt[1]*(s.N)^expo=m.wt[s.N] =>expo=log.(m.wt[s.N]/m.wt[1])/log.(s.N)
+     m.Yct[2:s.N-1].=init*(2:s.N-1).^expo
 
-     init =Ykt[1]+ (Ykt[s.N]-Ykt[1])*period2_change
-     expo =log.(Ykt[s.N]./init)./log.(s.N)   #wt[1]*(s.N).^expo=wt[s.N] =>expo=log.(wt[s.N]./wt[1])/log.(s.N)
-     Ykt[2:s.N-1]=init*(2:s.N-1).^expo
+     init =m.Ykt[1]+ (m.Ykt[s.N]-m.Ykt[1])*period2_change
+     expo =log.(m.Ykt[s.N]./init)./log.(s.N)   #m.wt[1]*(s.N).^expo=m.wt[s.N] =>expo=log.(m.wt[s.N]./m.wt[1])/log.(s.N)
+     m.Ykt[2:s.N-1].=init*(2:s.N-1).^expo
 
-     Pkt[2:s.N-1]=m_end.Pk
-     ξt[2:s.N-1]=m_end.ξ
+     m.Pkt[2:s.N-1].=m_end.Pk
+     m.ξt[2:s.N-1].=m_end.ξ
 
-    Guess = [Yct[2:s.N-1] wt[2:s.N-1] ξt[2:s.N-1] Pkt[2:s.N-1] Ykt[2:s.N-1]]
+    Guess = [m.Yct[2:s.N-1] m.wt[2:s.N-1] m.ξt[2:s.N-1] m.Pkt[2:s.N-1] m.Ykt[2:s.N-1]]
 
         if s.load_prices == 1
         @load "KLS3_Prices.jld2" Prices
          Guess = [Prices[1,2:s.N-1] Prices[2,2:s.N-1] Prices[3,2:s.N-1] Prices[4,2:s.N-1] Prices[5,2:s.N-1]]
         end
-
-     m=merge(m,(Pkt=Pkt,wt=wt,ξt=ξt,Ykt=Ykt,Yct=Yct,tariffsincomet=tariffsincomet))
-     #m=merge(m,(ϕht=ϕht,))
     end
 
  ## STEP 4: Solving for the GE prices and quantities
-
+@time begin
      if s.transition_GE== 1
          # guess
          Guess=log.(Guess)
@@ -251,9 +253,8 @@ end
          Guess=log.(Guess)
          Prices_sol = Guess
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
-
      end
-
+end
     end
 
  ## Welfare analysis

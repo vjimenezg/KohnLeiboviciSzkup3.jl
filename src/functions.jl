@@ -219,7 +219,7 @@ function KLS3_staticproblem(m,s,r)
 end
 ####################### Static Problem Period 2 #####################
 
-function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
+function KLS3_staticproblem_period2_altTiming(m,s,r,rt)
 
     ### Useful objects
 
@@ -233,8 +233,8 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     cap_gain = (1-m.Pk/m.Pk_lag)
 
     # Capital
-    r=merge(r,(k_x = rt[1].k,
-    k_nx = rt[1].k))
+    r=merge(r,(k_x = rt[1].r_0.k,
+    k_nx = rt[1].r_0.k))
 
     # Useful constants
     MC = (m.Pk/m.α_m )^m.α_m * (m.w /((1-m.α)*(1-m.α_m)))^((1-m.α)*(1-m.α_m))
@@ -246,16 +246,16 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     const_μ_x = (1 ./r.z_grid_mat).^(1/(m.α.*(1-m.α_m))) .* 1 ./r.k_x .* ((m.σ-1)./(m.σ)).^m.σ .*(m.ϕ_h + (m.ξ/m.τ).^m.σ.*m.Yf.*m.τ.*(1+m.τ_x).^(-m.σ))
 
     # marginal cost
-    r=merge(r,(μ_x = const_μ_x.^( (m.α.*(1-m.α_m)) ./ (1+(m.σ-1).*m.α.*(1-m.α_m)) ) .*MC.^(1 ./(1+(m.σ-1).*m.α.*(1-m.α_m))),
+    r=merge(r,(μ_x = const_μ_x.^( (m.α.*(1-m.α_m)) ./ (1+(m.σ-1).*m.α.*(1-m.α_m)) ) .*MC.^(1 ./(1+(m.σ-1).*m.α.*(1-m.α_m))),))
 
     # variable inputs
-    m_x = (m.α_m./m.Pk) .* (r.z_grid_mat.*r.μ_x).^(1 ./(m.α.*(1-m.α_m))) .* r.k_x .*MC.^(-1 ./(m.α.*(1-m.α_m))),
+    r=merge(r,(m_x = (m.α_m./m.Pk) .* (r.z_grid_mat.*r.μ_x).^(1 ./(m.α.*(1-m.α_m))) .* r.k_x .*MC.^(-1 ./(m.α.*(1-m.α_m))),
     n_x = ( ((1-m.α).*(1-m.α_m)) ./ m.w ) .* ( r.z_grid_mat.*r.μ_x ).^(1 ./(m.α.*(1-m.α_m))) .* r.k_x .*MC.^(-1 ./(m.α.*(1-m.α_m))),
 
     # output
     yd_x = ((m.σ-1)/m.σ).^m.σ .* m.ϕ_h .* r.μ_x.^(-m.σ),
-    yf_x = ((m.σ-1)/m.σ).^m.σ .* m.ξ.^m.σ .* m.Yf .* (m.τ .*(1+m.τ_x) .*r.μ_x).^(-m.σ),
-    y_x = (r.yd_x+m.τ*r.yf_x),
+    yf_x = ((m.σ-1)/m.σ).^m.σ .* m.ξ.^m.σ .* m.Yf .* (m.τ .*(1+m.τ_x) .*r.μ_x).^(-m.σ)))
+    r=merge(r,(y_x = r.yd_x+m.τ*r.yf_x,
 
 #Prices adjust (change in demand)
     pd_x = (r.yd_x./m.ϕ_h).^(-1/m.σ)))
@@ -264,7 +264,7 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     r.pf_x[r.yf_x.==0] .= 0
 
 #Profits (in units of the final good)
-    r=merge(r,(π_x = r.pd_x.*r.yd_x + m.ξ*r.yf_x.*r.pf_x - ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x - m.w*r.n_x - m.Pk*r.m_x - m.w*m.F_base,))
+    r=merge(r,(π_x = r.pd_x.*r.yd_x .+ m.ξ*r.yf_x.*r.pf_x .- ((m.r+m.δ).+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_x .- m.w*r.n_x .- m.Pk*r.m_x .- m.w*m.F_base,))
 
 
 # Non-Exporters
@@ -273,16 +273,16 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     const_μ_nx = (1 ./r.z_grid_mat).^(1/(m.α.*(1-m.α_m))) .* 1 ./r.k_nx .* ((m.σ-1)./(m.σ)).^m.σ .* m.ϕ_h
 
     # marginal cost
-    r=merge(r,(μ_nx = const_μ_nx.^((m.α.*(1-m.α_m))./(1+(m.σ-1).*m.α.*(1-m.α_m)))*MC.^(1 ./(1 + (m.σ-1).*m.α.*(1-m.α_m))),
+    r=merge(r,(μ_nx = const_μ_nx.^((m.α.*(1-m.α_m))./(1+(m.σ-1).*m.α.*(1-m.α_m)))*MC.^(1 ./(1 + (m.σ-1).*m.α.*(1-m.α_m))),))
 
     # variable inputs
-    m_nx = (m.α_m/m.Pk) .* (r.z_grid_mat.*r.μ_nx).^(1 ./(m.α*(1-m.α_m))) .* r.k_nx .*MC.^(-1 ./(m.α.*(1-m.α_m))),
+    r=merge(r,(m_nx = (m.α_m/m.Pk) .* (r.z_grid_mat.*r.μ_nx).^(1 ./(m.α*(1-m.α_m))) .* r.k_nx .*MC.^(-1 ./(m.α.*(1-m.α_m))),
     n_nx = ( ((1-m.α).*(1-m.α_m)) ./ m.w ) .* ( r.z_grid_mat.*r.μ_nx ).^(1 ./(m.α.*(1-m.α_m))) .* r.k_nx .*MC.^(-1 ./(m.α.*(1-m.α_m))),
 
     # output
-    yd_nx = ((m.σ-1)/m.σ).^m.σ .* m.ϕ_h .* r.μ_nx.^(-m.σ),
-    yf_nx = zeros(size(r.yd_nx)),
-    y_nx = (r.yd_nx+m.τ*r.yf_nx),
+    yd_nx = ((m.σ-1)/m.σ).^m.σ .* m.ϕ_h .* r.μ_nx.^(-m.σ)))
+    r=merge(r,(yf_nx = zeros(size(r.yd_nx)),))
+    r=merge(r,(y_nx = (r.yd_nx+m.τ*r.yf_nx),
 
 #Prices
     pd_nx = ((r.yd_nx/m.ϕ_h).^(-1/m.σ))))
@@ -290,11 +290,11 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt,varargin)
     r=merge(r,(pf_nx = zeros(s.a_grid_size,s.z_grid_size),
 
 #Profits
-    π_nx =  r.pd_nx.*r.yd_nx  -  ((m.r+m.δ)+(1-m.δ)*cap_gain)*r.k_nx*m.Pk_lag - m.w*r.n_nx - m.Pk*r.m_nx,
+    π_nx =  r.pd_nx.*r.yd_nx  .-  ((m.r+m.δ).+(1-m.δ)*cap_gain)*r.k_nx*m.Pk_lag .- m.w*r.n_nx .- m.Pk*r.m_nx,
 
 
 # Export decision
-    e=1))
+    e=ones(s.a_grid_size,s.z_grid_size)))
     r.e .= r.π_x .>= r.π_nx
 
     return r
@@ -771,30 +771,29 @@ guessM=sim.measure
 #Display
 if s.display==1
 
-        show("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
-        show(" ")
-
-        show("Share of exporters (all firms):  $(sim.share_x)")
-        show("Exporter domestic sales premium: $(sim.xpremium_sales_d)")
-        show("Credit/GDP: $(sim.credit_gdp)")
-        show("M/GDP: $(sim.IM_GDP)")
-        show("X-M/GDP:  $(sim.NX_GDP)")
-        show("PmcYmc/PmYm: $(sim.Cimp_share)")
-#         show("M/Absorption:  $(sim.IM_Absorption )")
-#         show("X-M/Absorption:  $(sim.NX_Absorption)")
-#         show("M/Sales:  $(sim.IM_Sales)")
-#         show("X-M/Sales:  $(sim.NX_Sales)")
-#         show("PmkYmk/PkYk:  $(sim.Kimp_PkYk )")
-#         show("PmkYmk/GDP:  $(sim.Kimp_GDP )")
-#         show("PmkYmk/Sales:  $(sim.Kimp_Sales )")
-#         show("PmcYmc/PmYm:  $(sim.Cimp_share )")
-#         show("PmkYmk/PmYm:  $(sim.Kimp_share )")
-#         show("X/GDP:  $(sim.X_GDP)")
-#         show("X/Sales:  $(sim.X_Sales)")
-#         show("Av. X intensity:  $(sim.x_share_av)")
-#         show("C/(C+I):  $(sim.CRatio )")
-#         show("Inv_GDP:  $(sim.InvGDP )")
-        show("Share of agents at highest a: $( sim.a_max_share)")
+    print("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
+    print("\n")
+    print("\nShare of exporters (all firms):  $(sim.share_x)")
+    print("\nExporter domestic sales premium: $(sim.xpremium_sales_d)")
+    print("\nCredit/GDP: $(sim.credit_gdp)")
+    print("\nM/GDP: $(sim.IM_GDP)")
+    print("\nX-M/GDP:  $(sim.NX_GDP)")
+    print("\nPmcYmc/PmYm: $(sim.Cimp_share)")
+#         print("\nM/Absorption:  $(sim.IM_Absorption )")
+#         print("\nX-M/Absorption:  $(sim.NX_Absorption)")
+#         print("\nM/Sales:  $(sim.IM_Sales)")
+#         print("\nX-M/Sales:  $(sim.NX_Sales)")
+#         print("\nPmkYmk/PkYk:  $(sim.Kimp_PkYk )")
+#         print("\nPmkYmk/GDP:  $(sim.Kimp_GDP )")
+#         print("\nPmkYmk/Sales:  $(sim.Kimp_Sales )")
+#         print("\nPmcYmc/PmYm:  $(sim.Cimp_share )")
+#         print("\nPmkYmk/PmYm:  $(sim.Kimp_share )")
+#         print("\nX/GDP:  $(sim.X_GDP)")
+#         print("\nX/Sales:  $(sim.X_Sales)")
+#         print("\nAv. X intensity:  $(sim.x_share_av)")
+#         print("\nC/(C+I):  $(sim.CRatio )")
+#         print("\nInv_GDP:  $(sim.InvGDP )")
+    print("\nShare of agents at highest a: $( sim.a_max_share)")
 
  end
 
@@ -892,30 +891,29 @@ guessM=sim.measure
 #Display
 if s.display==1
 
-        show("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
-        show(" ")
-
-        show("Share of exporters (all firms):  $(sim.share_x)")
-        show("Exporter domestic sales premium: $(sim.xpremium_sales_d)")
-        show("Credit/GDP: $(sim.credit_gdp)")
-        show("M/GDP: $(sim.IM_GDP)")
-        show("X-M/GDP:  $(sim.NX_GDP)")
-        show("PmcYmc/PmYm: $(sim.Cimp_share)")
-#         show("M/Absorption:  $(sim.IM_Absorption )")
-#         show("X-M/Absorption:  $(sim.NX_Absorption)")
-#         show("M/Sales:  $(sim.IM_Sales)")
-#         show("X-M/Sales:  $(sim.NX_Sales)")
-#         show("PmkYmk/PkYk:  $(sim.Kimp_PkYk )")
-#         show("PmkYmk/GDP:  $(sim.Kimp_GDP )")
-#         show("PmkYmk/Sales:  $(sim.Kimp_Sales )")
-#         show("PmcYmc/PmYm:  $(sim.Cimp_share )")
-#         show("PmkYmk/PmYm:  $(sim.Kimp_share )")
-#         show("X/GDP:  $(sim.X_GDP)")
-#         show("X/Sales:  $(sim.X_Sales)")
-#         show("Av. X intensity:  $(sim.x_share_av)")
-#         show("C/(C+I):  $(sim.CRatio )")
-#         show("Inv_GDP:  $(sim.InvGDP )")
-        show("Share of agents at highest a: $( sim.a_max_share)")
+        print("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
+        print("\n")
+        print("\nShare of exporters (all firms):  $(sim.share_x)")
+        print("\nExporter domestic sales premium: $(sim.xpremium_sales_d)")
+        print("\nCredit/GDP: $(sim.credit_gdp)")
+        print("\nM/GDP: $(sim.IM_GDP)")
+        print("\nX-M/GDP:  $(sim.NX_GDP)")
+        print("\nPmcYmc/PmYm: $(sim.Cimp_share)")
+#         print("\nM/Absorption:  $(sim.IM_Absorption )")
+#         print("\nX-M/Absorption:  $(sim.NX_Absorption)")
+#         print("\nM/Sales:  $(sim.IM_Sales)")
+#         print("\nX-M/Sales:  $(sim.NX_Sales)")
+#         print("\nPmkYmk/PkYk:  $(sim.Kimp_PkYk )")
+#         print("\nPmkYmk/GDP:  $(sim.Kimp_GDP )")
+#         print("\nPmkYmk/Sales:  $(sim.Kimp_Sales )")
+#         print("\nPmcYmc/PmYm:  $(sim.Cimp_share )")
+#         print("\nPmkYmk/PmYm:  $(sim.Kimp_share )")
+#         print("\nX/GDP:  $(sim.X_GDP)")
+#         print("\nX/Sales:  $(sim.X_Sales)")
+#         print("\nAv. X intensity:  $(sim.x_share_av)")
+#         print("\nC/(C+I):  $(sim.CRatio )")
+#         print("\nInv_GDP:  $(sim.InvGDP )")
+        print("\nShare of agents at highest a: $( sim.a_max_share)")
 
  end
 

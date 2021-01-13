@@ -70,7 +70,7 @@ m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),))
 
 
 ##################### Transition Settings #####################
-s=merge(s,(N=60,)) #length of transition
+s=merge(s,(N=20,)) #length of transition
 
 #Shock to collateral constraint
 θ_old = m.θ
@@ -139,11 +139,11 @@ m=merge(m,(τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,s.N-1)),))
 
 s=merge(s,(
 #Productivity
-    z_grid_size = 200, # #100; #75; #250; #Productivity grid size
+    z_grid_size = 100, # #100; #75; #250; #Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; #Curvature parameter to control distance across grid points
 
 #Assets
-    a_grid_size = 200,# 100; #150; #250; #Asset grid size
+    a_grid_size = 100,# 100; #150; #250; #Asset grid size
     a_grid_power = 2, #2; #3 #Curvature parameter to control distance across grid points -- for a>=0 (for a<0, grid spacing is linear)
 
     a_grid_ub = 5, #200; #200; #1e-3 #500;#Upper bound on asset grid #CHECK WHETHER IT BINDS!
@@ -164,14 +164,14 @@ s=merge(s,(
      method_GE=:trust_region,
      xtol_GE=1E-7,
      ftol_GE=1E-8,
-     show_trace_GE=true,
+     show_trace_GE=false,
      #MaxFunEvals_GE = 8_000,
      #MaxIter_GE = 15,
 
      method_trans=:trust_region,
      xtol_trans=1E-7,
      ftol_trans=1E-7,
-     show_trace_trans=true,
+     show_trace_trans=false,
      MaxFunEvals_trans = 8_000,
      MaxIter_trans = 15))
 
@@ -197,4 +197,4 @@ s=merge(s,(
         a_grid_1 = LinRange(0,1,s.a_grid_size))) #Asset grid
         r=merge(r,(a_grid_2 = r.a_grid_1.^s.a_grid_power,))
         r=merge(r,(a_grid = (r.a_grid_2.*(s.a_grid_ub-s.a_grid_lb) .+ s.a_grid_lb)',))
-        r=merge(r,(a_grid_vec = repeat(r.a_grid,1,length(r.a_grid)),))
+        r=merge(r,(a_grid_vec = repeat(r.a_grid,length(r.a_grid),1),))
