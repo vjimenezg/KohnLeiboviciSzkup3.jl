@@ -3,8 +3,8 @@
 ########################## Measure Trans #############################
 function KLS3_measure_trans(rt,N,M0)
 
-    numZ = length(rt[1].r_0.z_grid)
-    numA = length(rt[1].r_0.a_grid)
+    numZ = length(rt[1].z_grid)
+    numA = length(rt[1].a_grid)
 
 
     M = zeros(numA,numZ,N)
@@ -12,17 +12,15 @@ function KLS3_measure_trans(rt,N,M0)
     M[:,:,2] = M0 # in the second period news arrives after states are determined
     Mnew = M0
 
-    P=rt[1].r_0.z_P
+    P=rt[1].z_P
     for n=2:N-1
         apt_ind = rt[n].ap_ind
         Mold = Mnew
         Mnew = zeros(numA,numZ)
-
-        for i=1:numA #Old asset state
-            for j=1:numZ #Old productivity state
-
-                Mnew[apt_ind[i,j],:] = Mnew[apt_ind[i,j],:] .+ Mold[i,j].*P[j,:]
-
+        for j=1:numZ #Old productivity state
+            PP=P[j,:]
+            for i=1:numA #Old asset state
+                Mnew[apt_ind[i,j],:] += Mold[i,j]*PP
             end
         end
 
@@ -43,7 +41,7 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 ### Shocks
 
 #Initialize solution objects
-    v_p=rt[s.N].r_end.v
+    v_p=rt[s.N].v
 
     v_new = fill(NaN,size(v_p))
     ap_ind_float = zeros(size(v_new))
@@ -71,10 +69,10 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
                 u = (c.^exponent)./exponent .+ neg_c_indexes*-1e50
 
                 MM=ones_vec*P[j,:]'
-                v,index_ap = findmax(u .+ MM*v_pt,dims=1)
+                v,index_ap = findmax(u .+ MM*v_pt,dims=2)
                 v_new[:,j] = v
                 for (i,index) in enumerate(index_ap)
-                ap_ind_float[i,j] = index[1]
+                ap_ind_float[i,j] = index[2]
                 end
         end
         ap_ind=convert(Array{Int64},ap_ind_float)
@@ -183,10 +181,10 @@ function KLS3_dynamicproblem_trans_vec(m,s,r,v_p)
             u = (c.^exponent)./exponent .+ neg_c_indexes*-1e50
 
             MM=ones_vec*P[j,:]
-            v,index_ap = findmax(u .+ MM*v_pt,dims=1)
+            v,index_ap = findmax(u .+ MM*v_pt,dims=2)
             v_new[:,j] = v
             for (i,index) in enumerate(index_ap)
-            ap_ind_float[i,j] = index[1]
+            ap_ind_float[i,j] = index[2]
             end
     end
     ap_ind=convert(Array{Int64},ap_ind_float)
@@ -430,7 +428,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
 
         #yd_c = ((pd/m.ω_h_c).^(-m.σ)) * sim.C[t,1]
         yd_c = max.(yd - yd_k,0.00001)
-        ym_c = (m.ξ*m.Pm_c*(1+m.τ_m_c)/(m.ω_m_c)).^(-m.σ) * sim.C[t,1] # For some reason this has complex entries. Check dynamicproblem for errors in the computing of C
+        ym_c = (m.ξ*m.Pm_c*(1+m.τ_m_c)/(m.ω_m_c)).^(-m.σ) * sim.C[t,1]
         sim.Yc[t,1] = (sum(measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ))) + m.ω_m_c*(ym_c.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1))
 
 
@@ -527,9 +525,9 @@ function KLS3_simulate_trans(m,s,rt,Guess)
          sim.X_D[t,1] = sim.PxYx[t,1]/sim.PdYd[t,1]
 
         # Every credit statistic only for tradables
-        rt[t].d = (1+m.r).*(m.Pk_lag*k - rt[t].a)
+        rt[t]=merge(rt[t],(d = (1+m.r).*(m.Pk_lag*k - rt[t].a),))
 
-        sim.credit[t,1] = sum(measure.*max(rt[t].d,0)) # only entrepreneurs/firms (for workers r.d is negative)
+        sim.credit[t,1] = sum(measure.*max.(rt[t].d,0)) # only entrepreneurs/firms (for workers r.d is negative)
         sim.credit_gdp[t,1] = sim.credit[t,1]/sim.GDP[t,1]
         sim.d_agg[t,1] = sum(measure.*rt[t].d) # for both firms and workers
         sim.NFA_GDP[t,1] = -sim.d_agg[t,1]/sim.GDP[t,1]
@@ -542,8 +540,8 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         sales = sales_d+sales_x
         x_share = sales_x./sales
 
-        sim.x_share_av[t,1] =  NaNMath.sum(measure.*e.* x_share) / sum(measure.*e)
-        sim.x_share_av[isnan.(sim.x_share_av[t,1])].=1
+        sim.x_share_av[t,1] =  sum(filter(!isnan,measure.*e.* x_share)) / sum(measure.*e)
+        # sim.x_share_av[isnan.(sim.x_share_av[t,1])].=1 #Don't know the role of this, but it throws error in Julia given sim.x_share_av is a scalar
 
         if s.extra_results==1
             ln_sales = log.(sales)
@@ -607,15 +605,15 @@ function KLS3_simulate_trans(m,s,rt,Guess)
     ## Real Statistics
     #Real GDP, Real Exports and Real Domestic Sales
 
-        sim.X_Laspeyres[t,1] = sum(measure.*m.ξt[1].*rt[1].r_0.pf.*rt[t].yf)
-        sim.D_Laspeyres[t,1] = sum(measure.*rt[1].r_0.pd.*rt[t].yd)
-        sim.Sales_Laspeyres[t,1] = sum(measure.*(rt[1].r_0.pd.*rt[t].yd+m.ξt[1].*rt[1].r_0.pf.*rt[t].yf))
-        sim.GDP_Laspeyres[t,1] = sum(measure.*(rt[1].r_0.pd.*rt[t].yd+m.ξ_t[1]*rt[1].r_0.pf.*rt[t].yf-mat*m.Pkt[1]))
+        sim.X_Laspeyres[t,1] = sum(measure.*m.ξt[1].*rt[1].pf.*rt[t].yf)
+        sim.D_Laspeyres[t,1] = sum(measure.*rt[1].pd.*rt[t].yd)
+        sim.Sales_Laspeyres[t,1] = sum(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1].*rt[1].pf.*rt[t].yf))
+        sim.GDP_Laspeyres[t,1] = sum(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1]*rt[1].pf.*rt[t].yf-mat*m.Pkt[1]))
         sim.Imports[t,1] = sim.PmYm[t,1]
         sim.Imports_C[t,1] = m.ξ*(1+m.τ_m_c)*m.Pm_c*ym_c
         sim.Imports_K[t,1] =  m.ξ*(1+m.τ_m_k)*m.Pm_k*ym_k
-        sim.Imports_C_Laspeyres[t,1] = m.ξt[1].*(1+m.τ_m_c_v(1))*m.Pm_c*ym_c
-        sim.Imports_K_Laspeyres[t,1] =  m.ξt[1].*(1+m.τ_m_k_v(1))*m.Pm_k*ym_k
+        sim.Imports_C_Laspeyres[t,1] = m.ξt[1].*(1+m.τ_m_c_v[1])*m.Pm_c*ym_c
+        sim.Imports_K_Laspeyres[t,1] =  m.ξt[1].*(1+m.τ_m_k_v[1])*m.Pm_k*ym_k
         sim.Imports_Laspeyres[t,1] =sim.Imports_C_Laspeyres[t,1] +sim.Imports_K_Laspeyres[t,1]
 
      ## Solution-related statistics

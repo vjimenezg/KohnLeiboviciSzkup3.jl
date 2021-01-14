@@ -233,8 +233,8 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt)
     cap_gain = (1-m.Pk/m.Pk_lag)
 
     # Capital
-    r=merge(r,(k_x = rt[1].r_0.k,
-    k_nx = rt[1].r_0.k))
+    r=merge(r,(k_x = rt[1].k,
+    k_nx = rt[1].k))
 
     # Useful constants
     MC = (m.Pk/m.α_m )^m.α_m * (m.w /((1-m.α)*(1-m.α_m)))^((1-m.α)*(1-m.α_m))
@@ -705,8 +705,7 @@ end
 
 #Display
  if s.display==1
-     show("------------------------------------------------")
-     show("Guesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
+     print("\nGuesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
  end
 
 
@@ -837,7 +836,7 @@ end
 
 #Display
  if s.display==1
-     show("Guesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
+     print("\nGuesses: ϕ_h=$(m.ϕ_h) , w= $(m.w) , r= $(m.r) , ξ= $(m.ξ) , Pk= $(m.Pk)")
  end
 
 

@@ -168,12 +168,10 @@ end
 
  # Store results from initial and final steady states
 
- rt=Vector{Any}(undef,s.N)
+rt=Vector{Any}(undef,s.N)
 
- rt[1] = (r_0=r_0,
- measure= sim_0.measure)
- rt[s.N] = (r_end=r_end,
- measure= sim_end.measure)
+rt[1] = merge(r_0,(measure=sim_0.measure,))
+rt[s.N] = merge(r_end,(measure=sim_end.measure,))
  #r_0=nothing
  #r_end=nothing
 
@@ -258,7 +256,7 @@ end
     end
 
  ## Welfare analysis
- if s.welfare==1 #PENDING (figures)
+ if s.welfare==1 #FIGURES PENDING
 include("welfare.jl")
  end
 
