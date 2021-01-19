@@ -24,9 +24,9 @@
     s=merge(s,(fcost_fgoods = 0,
 
 # Simulation
-    flag_simulate = 0, # flag_simulate = 0, simulates by iterating on measure of firms,
-                         # flag_simulate = 1, simulates by generating
-                         # sequence of random shocks
+    flag_simulate = 0, # flag_simulate = 0, simulates by iterating on measure
+                       # of firms, flag_simulate = 1, simulates by generating
+                       # sequence of random shocks
     display = 1, #display=1, displays GE results on each iteration, 0 does not.
     extra_results=0,
     transition = 1, #Transition
@@ -42,7 +42,7 @@
 
 m = (θ = 0.20541136, #Collateral constraint
     F_base = 0.46563816, #Fixed export cost
-    log_z_σ = 0.15652825, #Standard deviation of log-normal productivity distribution
+    log_z_σ = 0.15652825, #Standard dev. of log-normal productivity distribution
 α_m=0.5,
 β=0.83500441,
 σ=4.0,
@@ -58,15 +58,16 @@ z_mean=1.0,
 ω_m_c = 0.20904358,
 ω_h_k = 1,
 ω_m_k = 0.28722687,
-Yf = 10, #/((1+m.τ_x)^(-m.σ)); #Output in the rest of the world
+Yf = 10, #/((1+m.τ_x)^(-m.σ)) #Output in the rest of the world
 Pf = 1.0, #Price index in the rest of the world
 Pm_c = 1.0, #/(1+m.τ_m); #Price index of goods imported from the rest of the world
 Pm_k = 1.0,
-ω_m = 1.0, #Measure of varieties produced by the rest of the world # CHECK)
+ω_m = 1.0, #Measure of varieties produced by the rest of the world
 r = 0.06,
 tariffsincome = 0.0,
 log_z_ρ = 0.9) #13.69641182/14.69641182, #Persistence
-m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),)) #Normalize average productivity to 1, log_z_μ is the mean of log_z
+m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),))
+#Normalize average productivity to 1, log_z_μ is the mean of log_z
 
 
 ##################### Transition Settings #####################
@@ -139,14 +140,17 @@ m=merge(m,(τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,s.N-1)),))
 
 s=merge(s,(
 #Productivity
-    z_grid_size = 100, # #100; #75; #250; #Productivity grid size
-    z_grid_power =1/2, # 1/2; #1/2; #1; #Curvature parameter to control distance across grid points
+    z_grid_size = 100, # 100; #75; #250;# Productivity grid size
+    z_grid_power =1/2, # 1/2; #1/2; #1; # Curvature parameter to control
+                                        # distance across grid points
 
 #Assets
-    a_grid_size = 100,# 100; #150; #250; #Asset grid size
-    a_grid_power = 2, #2; #3 #Curvature parameter to control distance across grid points -- for a>=0 (for a<0, grid spacing is linear)
+    a_grid_size = 100,# 100; #150; #250; # Asset grid size
+    a_grid_power = 2, #2; #3 # Curvature parameter to control distance across
+                             # grid points -- for a>=0 (for a<0, grid spacing is linear)
 
-    a_grid_ub = 5, #200; #200; #1e-3 #500;#Upper bound on asset grid #CHECK WHETHER IT BINDS!
+    a_grid_ub = 5, #200; #200; #1e-3 #500;# Upper bound on asset grid
+                                          # CHECK WHETHER IT BINDS!
     a_grid_lb = 1e-3, #1e-8;
 
 #Export entry solution algorithm
@@ -171,7 +175,7 @@ s=merge(s,(
      method_trans=:trust_region,
      xtol_trans=1E-7,
      ftol_trans=1E-7,
-     show_trace_trans=false,
+     show_trace_trans=true,
      MaxFunEvals_trans = 8_000,
      MaxIter_trans = 15))
 

@@ -206,7 +206,7 @@ function KLS3_staticproblem(m,s,r)
         r=merge(r,(π_nx = r.pd_nx.*r.yd_nx .- ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag*r.k_nx .- m.w*r.n_nx .- m.Pk*r.m_nx,))
 
     ## Export decision
-        r=merge(r,(e=zeros(size(r.k_nx_u)),))
+        r=merge(r,(e=BitArray(undef,size(r.k_nx_u)),))
         r.e .= r.π_x .>= r.π_nx
 
       #r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = #nothing, pd_x_c = nothing,  pf_x_c = nothing))
@@ -294,7 +294,7 @@ function KLS3_staticproblem_period2_altTiming(m,s,r,rt)
 
 
 # Export decision
-    e=ones(s.a_grid_size,s.z_grid_size)))
+    e=BitArray(undef,s.a_grid_size,s.z_grid_size)))
     r.e .= r.π_x .>= r.π_nx
 
     return r
@@ -318,7 +318,7 @@ function KLS3_dynamicproblem(m,s,r,guessV)
         v_diff = 1
         z_P=r.z_P
         a_grid=r.a_grid
-        exponent=1-m.γ
+        exponentg=1-m.γ
 
         #Value function iteration algorithm
 
@@ -337,7 +337,7 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
                     c1 =  profits[i,j] .+ a_grid[i].*(1 +m.r) .- a_grid
                     neg_c1_indexes = c1.<=0 #indices of a' for which consumption<0
-                    u = (c1.^exponent)./exponent .+ neg_c1_indexes.*-1e50
+                    u = (c1.^exponentg)./exponentg .+ neg_c1_indexes.*-1e50
 
                      v,index_ap = findmax(u .+ v_pp)
 

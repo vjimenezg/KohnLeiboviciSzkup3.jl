@@ -2,7 +2,7 @@ module KohnLeiboviciSzkup3
 
 ## ##################################################
 # This code solves the model in
-# Financial Development and Trade Liberalization
+# No Credit, No Gain: Trade Liberalization Dynamics, Production Inputs, and Financial Development
 # Kohn, Leibovici, Szkup 2020
 ####################################################
 
@@ -11,18 +11,19 @@ clearconsole()
 # Dependencies (commented the ones I'm not sure I need yet)
 
 using LinearAlgebra
+using Distributions
 # using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
-#using Interpolations # integration
 using NLsolve # root-finding
 using NamedTupleTools, Parameters # named tuples
-#using Roots
 using QuantEcon
 using Base
 #using NaNMath
-using Dates
-using JLD2
+using Dates #used to save the date of different workspaces
+using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
+using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
+using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
 #using GMT
-using Distributions
+
 # Model files
 include("tauchen.jl")
 include("parameters_settings.jl")
@@ -86,7 +87,7 @@ end
     end
 
 # Step 2: Solve final steady state
-     if s.transition == 1
+    if s.transition == 1
 
         #Shocks
         m=merge(m,(r = m.rv[end],
@@ -182,7 +183,7 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
  ξt = zeros(s.N,1),
  Ykt = zeros(s.N,1),
  Yct = zeros(s.N,1),
- tariffsincomet= zeros(s.N,1)))
+ tariffsincomet= zeros(Real,s.N,1)))
 
     if s.tariffsincome == 1
      # Guess
@@ -240,20 +241,21 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
 
  ## STEP 4: Solving for the GE prices and quantities
 @time begin
-     if s.transition_GE== 1
+        if s.transition_GE== 1
          # guess
          Guess=log.(Guess)
 
          results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess,autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
 
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
-     else
+        else
          Guess=log.(Guess)
          Prices_sol = Guess
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
-     end
-end
+        end
     end
+end
+
 
  ## Welfare analysis
  if s.welfare==1 #FIGURES PENDING
