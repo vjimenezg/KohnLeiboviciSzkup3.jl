@@ -1,4 +1,4 @@
-############################# measure_trans, dynamicproblem_trans_vec_t, dynamicproblem_trans_vec, simulate_trans, transition_vec2 (NLSolve), transition_vec2 (standard) ########################
+############################# measure_trans, dynamicproblem_trans_vec_t, simulate_trans, transition_vec2 (NLSolve), transition_vec2 (standard) ########################
 
 ########################## Measure Trans #############################
 function KLS3_measure_trans(rt,N,M0)
@@ -42,7 +42,12 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 
 #Generate solution objects
     v_p=copy(rt[s.N].v)
-    v_new = zeros(Real,size(v_p))
+    if s.transition_AD == 1
+    v_new = zeros(eltype(m.w),size(v_p))
+    else
+    v_new = zeros(size(v_p))
+    end
+
     ap_ind = zeros(Int64,size(v_new))
     ap=zeros(s.a_grid_size,s.z_grid_size)
     asset_income = r.a_grid'.*(1+m.r)
@@ -51,7 +56,7 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
     P=r.z_P
     v_pt=v_p'
     a_grid_vec=r.a_grid_vec
-    ones_vec=m.β *ones(s.a_grid_size,1)
+    ones_vec=m.β*ones(s.a_grid_size,1)
     neg_c_indexes=BitArray(undef,s.a_grid_size,s.z_grid_size)
     #Value function iteration algorithm
 
@@ -141,76 +146,7 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 
 return rt
 end
-############## Dynamic Problem Transition Vectorized ###############
 
-
-function KLS3_dynamicproblem_trans_vec(m,s,r,v_p)
-
-### Dynamic problem: value functions and policy functions
-
-#Initialize solution objects
-    M_one = ones(s.a_grid_size,s.z_grid_size)
-    v_new = similar(v_p)
-    ap_ind = zeros(Int64,size(v_new))
-    ap=similar(M_one)
-    asset_income = r.a_grid'.*(1+m.r)
-    exponentg=1-m.γ
-### Dynamic problem: value functions and policy functions
-    P=r.z_P
-    v_pt=v_p'
-    a_grid_vec=r.a_grid_vec
-    ones_vec=m.β *ones(s.z_grid_size,1)
-
-    #Value function iteration algorithm
-    profits = m.w + m.tariffsincome + r.e.*r.π_x + (1 .-r.e).*r.π_nx
-
-    for j = 1:s.z_grid_size
-            c =  profits[:,j] .+ asset_income .- a_grid_vec
-
-            neg_c_indexes = c.<=0 #indices of a' for which consumption<0
-
-            u = (c.^exponentg)./exponentg .+ neg_c_indexes*-1e50
-
-            MM=ones_vec*P[j,:]
-            v,index_ap = findmax(u .+ MM*v_pt,dims=2)
-            v_new[:,j] = v
-            for (i,index) in enumerate(index_ap)
-            ap_ind[i,j] = index[2]
-            end
-        ap[:,j]=r.a_grid[ap_ind[:,j]]
-    end
-
-    #Store output from value function iteration
-    r= merge(r,(v=v_new,
-    ap = ap,
-    ap_ind=ap_ind,
-    c = profits .+ r.a_grid_mat.*(1+m.r) .- r.ap,
-
-### Store output to be used in simulation
-
-    e  =  r.e,    #Should we multiply by sec_choice here and below?
-    pd = (1 .-r.e).*r.pd_nx + r.e.*r.pd_x,
-    yd = (1 .-r.e).*r.yd_nx + r.e.*r.yd_x,
-    pf = r.e.*r.pf_x,
-    yf =r.e.*r.yf_x,
-    k = (1 .-r.e).*r.k_nx + r.e.*r.k_x,
-    n_x = r.e.*(r.n_x),
-    n_nx = (1 .-r.e).*r.n_nx,
-    n = (1 .-r.e).*r.n_nx + r.e.*r.n_x,
-    m = (1 .-r.e).*r.m_nx + r.e.*r.m_x))
-
-    r=merge(r,(pd_nx = nothing, pd_x = nothing, yd_nx=nothing,  yd_x=nothing, pf_x=nothing, yf_x=nothing,
-    k_nx =nothing, k_x = nothing, n_nx=nothing, n_x=nothing, m_nx=nothing, m_x=nothing))
-
-    r=merge(r,(π_1 = (1 .-r.e).*r.π_nx + r.e.*r.π_x,
-    a = r.a_grid_mat,
-
-    #Fixed costs
-    S_mat = r.e*m.F,
-    F_mat = r.e*m.F))
-
-return r
-end
 ############## Simulate Transition ###############
 
 
@@ -237,101 +173,101 @@ function KLS3_simulate_trans(m,s,rt,Guess)
     M0 = rt[1].measure
     sim=(measure = KLS3_measure_trans(rt,N,M0),)
 
-    w_sim=zeros(eltype(m.w),N,1)
-    ξ_sim=zeros(eltype(m.w),N,1)
-    Pk_sim=zeros(eltype(m.w),N,1)
-    ϕ_h_sim=zeros(eltype(m.w),N,1)
-    share_x_sim=zeros(eltype(m.w),N,1)
-    share_d_sim=zeros(eltype(m.w),N,1)
-    K_sim=zeros(eltype(m.w),N,1)
-    inv_agg_sim=zeros(eltype(m.w),N,1)
-    I_sim=zeros(eltype(m.w),N,1)
-    M_sim=zeros(eltype(m.w),N,1)
-    Yk_sim=zeros(eltype(m.w),N,1)
-    C_sim=zeros(eltype(m.w),N,1)
-    Yc_sim=zeros(eltype(m.w),N,1)
-    PdYd_sim=zeros(eltype(m.w),N,1)
-    PxYx_sim=zeros(eltype(m.w),N,1)
-    PxYx_USD_sim=zeros(eltype(m.w),N,1)
-    PmYm_sim=zeros(eltype(m.w),N,1)
-    tariffsincome_sim=zeros(eltype(m.w),N,1)
-    FC_sim=zeros(eltype(m.w),N,1)
-    N_sim=zeros(eltype(m.w),N,1)
-    n_supply_sim=zeros(eltype(m.w),N,1)
-    n_demand_sim=zeros(eltype(m.w),N,1)
-    mc_n_sim=zeros(eltype(m.w),N,1)
-    a_supply_sim=zeros(eltype(m.w),N,1)
-    a_demand_sim=zeros(eltype(m.w),N,1)
-    mc_a_sim=zeros(eltype(m.w),N,1)
-    y_supply_sim=zeros(eltype(m.w),N,1)
-    y_demand_sim=zeros(eltype(m.w),N,1)
-    mc_y_sim=zeros(eltype(m.w),N,1)
-    k_supply_sim=zeros(eltype(m.w),N,1)
-    k_demand_sim=zeros(eltype(m.w),N,1)
-    mc_k_sim=zeros(eltype(m.w),N,1)
-    mc_Yk_belief_sim=zeros(eltype(m.w),N,1)
-    mc_tariffs_belief_sim=zeros(eltype(m.w),N,1)
-    mc_y_belief_sim=zeros(eltype(m.w),N,1)
-    Sales_sim=zeros(eltype(m.w),N,1)
-    GDP_sim=zeros(eltype(m.w),N,1)
-    X_GDP_sim=zeros(eltype(m.w),N,1)
-    D_GDP_sim=zeros(eltype(m.w),N,1)
-    X_Sales_sim=zeros(eltype(m.w),N,1)
-    D_Sales_sim=zeros(eltype(m.w),N,1)
-    NX_GDP_sim=zeros(eltype(m.w),N,1)
-    NX_Sales_sim=zeros(eltype(m.w),N,1)
-    X_D_sim=zeros(eltype(m.w),N,1)
-    credit_sim=zeros(eltype(m.w),N,1)
-    credit_gdp_sim=zeros(eltype(m.w),N,1)
-    d_agg_sim=zeros(eltype(m.w),N,1)
-    NFA_GDP_sim=zeros(eltype(m.w),N,1)
-    k_wagebill_sim=zeros(eltype(m.w),N,1)
-    x_share_av_sim=zeros(eltype(m.w),N,1)
-    ln_sales_sd_sim=zeros(eltype(m.w),N,1)
-    ln_sales_d_sd_sim=zeros(eltype(m.w),N,1)
-    sales_sd_sim=zeros(eltype(m.w),N,1)
-    sales_d_sd_sim=zeros(eltype(m.w),N,1)
-    sales_avg_nx_sim=zeros(eltype(m.w),N,1)
-    labor_avg_nx_sim=zeros(eltype(m.w),N,1)
-    sales_d_avg_nx_sim=zeros(eltype(m.w),N,1)
-    sales_avg_x_sim=zeros(eltype(m.w),N,1)
-    labor_avg_x_sim=zeros(eltype(m.w),N,1)
-    labor_tot_sim=zeros(eltype(m.w),N,1)
-    labor_tot_x_sim=zeros(eltype(m.w),N,1)
-    labor_tot_nx_sim=zeros(eltype(m.w),N,1)
-    labor_tot_w_sim=zeros(eltype(m.w),N,1)
-    labor_x_share_sim=zeros(eltype(m.w),N,1)
-    labor_nx_share_sim=zeros(eltype(m.w),N,1)
-    sales_d_avg_x_sim=zeros(eltype(m.w),N,1)
-    xpremium_sales_sim=zeros(eltype(m.w),N,1)
-    xpremium_labor_sim=zeros(eltype(m.w),N,1)
-    xpremium_sales_d_sim=zeros(eltype(m.w),N,1)
-    ln_sales_sd_mean_sim=zeros(eltype(m.w),N,1)
-    ln_sales_d_sd_mean_sim=zeros(eltype(m.w),N,1)
-    sales_sd_mean_sim=zeros(eltype(m.w),N,1)
-    sales_d_sd_mean_sim=zeros(eltype(m.w),N,1)
-    labor_sd_mean_sim=zeros(eltype(m.w),N,1)
-    avg_productivity1_sim=zeros(eltype(m.w),N,1)
-    avg_productivity2_sim=zeros(eltype(m.w),N,1)
-    avg_productivity3_sim=zeros(eltype(m.w),N,1)
-    X_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    D_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    Sales_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    GDP_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    Imports_sim=zeros(eltype(m.w),N,1)
-    Imports_C_sim=zeros(eltype(m.w),N,1)
-    Imports_K_sim=zeros(eltype(m.w),N,1)
-    Imports_C_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    Imports_K_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    Imports_Laspeyres_sim=zeros(eltype(m.w),N,1)
-    a_min_share_sim=zeros(eltype(m.w),N,1)
-    a_max_share_sim=zeros(eltype(m.w),N,1)
+    # w_sim=zeros(N,1)
+    # ξ_sim=zeros(N,1)
+    # Pk_sim=zeros(N,1)
+    # ϕ_h_sim=zeros(N,1)
+    # share_x_sim=zeros(N,1)
+    # share_d_sim=zeros(N,1)
+    # K_sim=zeros(N,1)
+    # inv_agg_sim=zeros(N,1)
+    # I_sim=zeros(N,1)
+    # M_sim=zeros(N,1)
+    # Yk_sim=zeros(N,1)
+    # C_sim=zeros(N,1)
+    # Yc_sim=zeros(N,1)
+    # PdYd_sim=zeros(N,1)
+    # PxYx_sim=zeros(N,1)
+    # PxYx_USD_sim=zeros(N,1)
+    # PmYm_sim=zeros(N,1)
+    # tariffsincome_sim=zeros(N,1)
+    # FC_sim=zeros(N,1)
+    # N_sim=zeros(N,1)
+    # n_supply_sim=zeros(N,1)
+    # n_demand_sim=zeros(N,1)
+    # mc_n_sim=zeros(N,1)
+    # a_supply_sim=zeros(N,1)
+    # a_demand_sim=zeros(N,1)
+    # mc_a_sim=zeros(N,1)
+    # y_supply_sim=zeros(N,1)
+    # y_demand_sim=zeros(N,1)
+    # mc_y_sim=zeros(N,1)
+    # k_supply_sim=zeros(N,1)
+    # k_demand_sim=zeros(N,1)
+    # mc_k_sim=zeros(N,1)
+    # mc_Yk_belief_sim=zeros(N,1)
+    # mc_tariffs_belief_sim=zeros(N,1)
+    # mc_y_belief_sim=zeros(N,1)
+    # Sales_sim=zeros(N,1)
+    # GDP_sim=zeros(N,1)
+    # X_GDP_sim=zeros(N,1)
+    # D_GDP_sim=zeros(N,1)
+    # X_Sales_sim=zeros(N,1)
+    # D_Sales_sim=zeros(N,1)
+    # NX_GDP_sim=zeros(N,1)
+    # NX_Sales_sim=zeros(N,1)
+    # X_D_sim=zeros(N,1)
+    # credit_sim=zeros(N,1)
+    # credit_gdp_sim=zeros(N,1)
+    # d_agg_sim=zeros(N,1)
+    # NFA_GDP_sim=zeros(N,1)
+    # k_wagebill_sim=zeros(N,1)
+    # x_share_av_sim=zeros(N,1)
+    # ln_sales_sd_sim=zeros(N,1)
+    # ln_sales_d_sd_sim=zeros(N,1)
+    # sales_sd_sim=zeros(N,1)
+    # sales_d_sd_sim=zeros(N,1)
+    # sales_avg_nx_sim=zeros(N,1)
+    # labor_avg_nx_sim=zeros(N,1)
+    # sales_d_avg_nx_sim=zeros(N,1)
+    # sales_avg_x_sim=zeros(N,1)
+    # labor_avg_x_sim=zeros(N,1)
+    # labor_tot_sim=zeros(N,1)
+    # labor_tot_x_sim=zeros(N,1)
+    # labor_tot_nx_sim=zeros(N,1)
+    # labor_tot_w_sim=zeros(N,1)
+    # labor_x_share_sim=zeros(N,1)
+    # labor_nx_share_sim=zeros(N,1)
+    # sales_d_avg_x_sim=zeros(N,1)
+    # xpremium_sales_sim=zeros(N,1)
+    # xpremium_labor_sim=zeros(N,1)
+    # xpremium_sales_d_sim=zeros(N,1)
+    # ln_sales_sd_mean_sim=zeros(N,1)
+    # ln_sales_d_sd_mean_sim=zeros(N,1)
+    # sales_sd_mean_sim=zeros(N,1)
+    # sales_d_sd_mean_sim=zeros(N,1)
+    # labor_sd_mean_sim=zeros(N,1)
+    # avg_productivity1_sim=zeros(N,1)
+    # avg_productivity2_sim=zeros(N,1)
+    # avg_productivity3_sim=zeros(N,1)
+    # X_Laspeyres_sim=zeros(N,1)
+    # D_Laspeyres_sim=zeros(N,1)
+    # Sales_Laspeyres_sim=zeros(N,1)
+    # GDP_Laspeyres_sim=zeros(N,1)
+    # Imports_sim=zeros(N,1)
+    # Imports_C_sim=zeros(N,1)
+    # Imports_K_sim=zeros(N,1)
+    # Imports_C_Laspeyres_sim=zeros(N,1)
+    # Imports_K_Laspeyres_sim=zeros(N,1)
+    # Imports_Laspeyres_sim=zeros(N,1)
+    # a_min_share_sim=zeros(N,1)
+    # a_max_share_sim=zeros(N,1)
 
-
-
-
-    sim=merge(sim,(w=w_sim,ξ=ξ_sim,Pk=Pk_sim,ϕ_h=ϕ_h_sim,share_x=share_x_sim,share_d=share_d_sim,K=K_sim,inv_agg=inv_agg_sim,I=I_sim,M=M_sim,Yk=Yk_sim,C=C_sim,Yc=Yc_sim,PdYd=PdYd_sim,PxYx=PxYx_sim,PxYx_USD=PxYx_USD_sim,PmYm=PmYm_sim,tariffsincome=tariffsincome_sim,FC=FC_sim,N=N_sim,n_supply=n_supply_sim,n_demand=n_demand_sim,mc_n=mc_n_sim,a_supply=a_supply_sim,a_demand=a_demand_sim,mc_a=mc_a_sim,y_supply=y_supply_sim,y_demand=y_demand_sim,mc_y=mc_y_sim,k_supply=k_supply_sim,k_demand=k_demand_sim,mc_k=mc_k_sim,mc_Yk_belief=mc_Yk_belief_sim,mc_tariffs_belief=mc_tariffs_belief_sim,mc_y_belief=mc_y_belief_sim,Sales=Sales_sim,GDP=GDP_sim,X_GDP=X_GDP_sim,D_GDP=D_GDP_sim,X_Sales=X_Sales_sim,D_Sales=D_Sales_sim,NX_GDP=NX_GDP_sim,NX_Sales=NX_Sales_sim,X_D=X_D_sim,credit=credit_sim,credit_gdp=credit_gdp_sim,d_agg=d_agg_sim,NFA_GDP=NFA_GDP_sim,k_wagebill=k_wagebill_sim,x_share_av=x_share_av_sim,ln_sales_sd=ln_sales_sd_sim,ln_sales_d_sd=ln_sales_d_sd_sim,sales_sd=sales_sd_sim,sales_d_sd=sales_d_sd_sim,sales_avg_nx=sales_avg_nx_sim,labor_avg_nx=labor_avg_nx_sim,sales_d_avg_nx=sales_d_avg_nx_sim,sales_avg_x=sales_avg_x_sim,labor_avg_x=labor_avg_x_sim,labor_tot=labor_tot_sim,labor_tot_x=labor_tot_x_sim,labor_tot_nx=labor_tot_nx_sim,labor_tot_w=labor_tot_w_sim,labor_x_share=labor_x_share_sim,labor_nx_share=labor_nx_share_sim,sales_d_avg_x=sales_d_avg_x_sim,xpremium_sales=xpremium_sales_sim,xpremium_labor=xpremium_labor_sim,xpremium_sales_d=xpremium_sales_d_sim,ln_sales_sd_mean=ln_sales_sd_mean_sim,ln_sales_d_sd_mean=ln_sales_d_sd_mean_sim,sales_sd_mean=sales_sd_mean_sim,sales_d_sd_mean=sales_d_sd_mean_sim,labor_sd_mean=labor_sd_mean_sim,avg_productivity1=avg_productivity1_sim,avg_productivity2=avg_productivity2_sim,avg_productivity3=avg_productivity3_sim,X_Laspeyres=X_Laspeyres_sim,D_Laspeyres=D_Laspeyres_sim,Sales_Laspeyres=Sales_Laspeyres_sim,GDP_Laspeyres=GDP_Laspeyres_sim,Imports=Imports_sim,Imports_C=Imports_C_sim,Imports_K=Imports_K_sim,Imports_C_Laspeyres=Imports_C_Laspeyres_sim,Imports_K_Laspeyres=Imports_K_Laspeyres_sim,Imports_Laspeyres=Imports_Laspeyres_sim,a_min_share=a_min_share_sim,a_max_share=a_max_share_sim))
-
+    if s.transition_AD == 1
+    sim=merge(sim,(w=zeros(eltype(m.w),N,1),ξ=zeros(eltype(m.w),N,1),Pk=zeros(eltype(m.w),N,1),ϕ_h=zeros(eltype(m.w),N,1),share_x=zeros(eltype(m.w),N,1),share_d=zeros(eltype(m.w),N,1),K=zeros(eltype(m.w),N,1),inv_agg=zeros(eltype(m.w),N,1),I=zeros(eltype(m.w),N,1),M=zeros(eltype(m.w),N,1),Yk=zeros(eltype(m.w),N,1),C=zeros(eltype(m.w),N,1),Yc=zeros(eltype(m.w),N,1),PdYd=zeros(eltype(m.w),N,1),PxYx=zeros(eltype(m.w),N,1),PxYx_USD=zeros(eltype(m.w),N,1),PmYm=zeros(eltype(m.w),N,1),tariffsincome=zeros(eltype(m.w),N,1),FC=zeros(eltype(m.w),N,1),N=zeros(eltype(m.w),N,1),n_supply=zeros(eltype(m.w),N,1),n_demand=zeros(eltype(m.w),N,1),mc_n=zeros(eltype(m.w),N,1),a_supply=zeros(eltype(m.w),N,1),a_demand=zeros(eltype(m.w),N,1),mc_a=zeros(eltype(m.w),N,1),y_supply=zeros(eltype(m.w),N,1),y_demand=zeros(eltype(m.w),N,1),mc_y=zeros(eltype(m.w),N,1),k_supply=zeros(eltype(m.w),N,1),k_demand=zeros(eltype(m.w),N,1),mc_k=zeros(eltype(m.w),N,1),mc_Yk_belief=zeros(eltype(m.w),N,1),mc_tariffs_belief=zeros(eltype(m.w),N,1),mc_y_belief=zeros(eltype(m.w),N,1),Sales=zeros(eltype(m.w),N,1),GDP=zeros(eltype(m.w),N,1),X_GDP=zeros(eltype(m.w),N,1),D_GDP=zeros(eltype(m.w),N,1),X_Sales=zeros(eltype(m.w),N,1),D_Sales=zeros(eltype(m.w),N,1),NX_GDP=zeros(eltype(m.w),N,1),NX_Sales=zeros(eltype(m.w),N,1),X_D=zeros(eltype(m.w),N,1),credit=zeros(eltype(m.w),N,1),credit_gdp=zeros(eltype(m.w),N,1),d_agg=zeros(eltype(m.w),N,1),NFA_GDP=zeros(eltype(m.w),N,1),k_wagebill=zeros(eltype(m.w),N,1),x_share_av=zeros(eltype(m.w),N,1),ln_sales_sd=zeros(eltype(m.w),N,1),ln_sales_d_sd=zeros(eltype(m.w),N,1),sales_sd=zeros(eltype(m.w),N,1),sales_d_sd=zeros(eltype(m.w),N,1),sales_avg_nx=zeros(eltype(m.w),N,1),labor_avg_nx=zeros(eltype(m.w),N,1),sales_d_avg_nx=zeros(eltype(m.w),N,1),sales_avg_x=zeros(eltype(m.w),N,1),labor_avg_x=zeros(eltype(m.w),N,1),labor_tot=zeros(eltype(m.w),N,1),labor_tot_x=zeros(eltype(m.w),N,1),labor_tot_nx=zeros(eltype(m.w),N,1),labor_tot_w=zeros(eltype(m.w),N,1),labor_x_share=zeros(eltype(m.w),N,1),labor_nx_share=zeros(eltype(m.w),N,1),sales_d_avg_x=zeros(eltype(m.w),N,1),xpremium_sales=zeros(eltype(m.w),N,1),xpremium_labor=zeros(eltype(m.w),N,1),xpremium_sales_d=zeros(eltype(m.w),N,1),ln_sales_sd_mean=zeros(eltype(m.w),N,1),ln_sales_d_sd_mean=zeros(eltype(m.w),N,1),sales_sd_mean=zeros(eltype(m.w),N,1),sales_d_sd_mean=zeros(eltype(m.w),N,1),labor_sd_mean=zeros(eltype(m.w),N,1),avg_productivity1=zeros(eltype(m.w),N,1),avg_productivity2=zeros(eltype(m.w),N,1),avg_productivity3=zeros(eltype(m.w),N,1),X_Laspeyres=zeros(eltype(m.w),N,1),D_Laspeyres=zeros(eltype(m.w),N,1),Sales_Laspeyres=zeros(eltype(m.w),N,1),GDP_Laspeyres=zeros(eltype(m.w),N,1),Imports=zeros(eltype(m.w),N,1),Imports_C=zeros(eltype(m.w),N,1),Imports_K=zeros(eltype(m.w),N,1),Imports_C_Laspeyres=zeros(eltype(m.w),N,1),Imports_K_Laspeyres=zeros(eltype(m.w),N,1),Imports_Laspeyres=zeros(eltype(m.w),N,1),a_min_share=zeros(eltype(m.w),N,1),a_max_share=zeros(eltype(m.w),N,1)))
+    else
+    sim=merge(sim,(w=zeros(N,1),ξ=zeros(N,1),Pk=zeros(N,1),ϕ_h=zeros(N,1),share_x=zeros(N,1),share_d=zeros(N,1),K=zeros(N,1),inv_agg=zeros(N,1),I=zeros(N,1),M=zeros(N,1),Yk=zeros(N,1),C=zeros(N,1),Yc=zeros(N,1),PdYd=zeros(N,1),PxYx=zeros(N,1),PxYx_USD=zeros(N,1),PmYm=zeros(N,1),tariffsincome=zeros(N,1),FC=zeros(N,1),N=zeros(N,1),n_supply=zeros(N,1),n_demand=zeros(N,1),mc_n=zeros(N,1),a_supply=zeros(N,1),a_demand=zeros(N,1),mc_a=zeros(N,1),y_supply=zeros(N,1),y_demand=zeros(N,1),mc_y=zeros(N,1),k_supply=zeros(N,1),k_demand=zeros(N,1),mc_k=zeros(N,1),mc_Yk_belief=zeros(N,1),mc_tariffs_belief=zeros(N,1),mc_y_belief=zeros(N,1),Sales=zeros(N,1),GDP=zeros(N,1),X_GDP=zeros(N,1),D_GDP=zeros(N,1),X_Sales=zeros(N,1),D_Sales=zeros(N,1),NX_GDP=zeros(N,1),NX_Sales=zeros(N,1),X_D=zeros(N,1),credit=zeros(N,1),credit_gdp=zeros(N,1),d_agg=zeros(N,1),NFA_GDP=zeros(N,1),k_wagebill=zeros(N,1),x_share_av=zeros(N,1),ln_sales_sd=zeros(N,1),ln_sales_d_sd=zeros(N,1),sales_sd=zeros(N,1),sales_d_sd=zeros(N,1),sales_avg_nx=zeros(N,1),labor_avg_nx=zeros(N,1),sales_d_avg_nx=zeros(N,1),sales_avg_x=zeros(N,1),labor_avg_x=zeros(N,1),labor_tot=zeros(N,1),labor_tot_x=zeros(N,1),labor_tot_nx=zeros(N,1),labor_tot_w=zeros(N,1),labor_x_share=zeros(N,1),labor_nx_share=zeros(N,1),sales_d_avg_x=zeros(N,1),xpremium_sales=zeros(N,1),xpremium_labor=zeros(N,1),xpremium_sales_d=zeros(N,1),ln_sales_sd_mean=zeros(N,1),ln_sales_d_sd_mean=zeros(N,1),sales_sd_mean=zeros(N,1),sales_d_sd_mean=zeros(N,1),labor_sd_mean=zeros(N,1),avg_productivity1=zeros(N,1),avg_productivity2=zeros(N,1),avg_productivity3=zeros(N,1),X_Laspeyres=zeros(N,1),D_Laspeyres=zeros(N,1),Sales_Laspeyres=zeros(N,1),GDP_Laspeyres=zeros(N,1),Imports=zeros(N,1),Imports_C=zeros(N,1),Imports_K=zeros(N,1),Imports_C_Laspeyres=zeros(N,1),Imports_K_Laspeyres=zeros(N,1),Imports_Laspeyres=zeros(N,1),a_min_share=zeros(N,1),a_max_share=zeros(N,1)))
+    end
 
     for t=2:N
     ### Shocks
@@ -758,36 +694,36 @@ function KLS3_transition_vec2!(F,Guess,m,r,s,rt)
     # Market clearing conditions
 
     if s.tariffsincome==0
-        for j=1:N-2
+        for j=1:s.N-2
         F[j]=sim_fun.mc_n[j+1]
         end
-        for j=N-1:2N-4
-        F[j]=sim_fun.mc_y[j+1-N+2]
+        for j=s.N-1:2*s.N-4
+        F[j]=sim_fun.mc_y[j+1-s.N+2]
         end
-        for j=2N-3:3N-6
+        for j=2*s.N-3:3*s.N-6
         F[j]=sim_fun.mc_k[2:s.N-1]
         end
-        for j=3N-5:4N-8
+        for j=3*s.N-5:4*s.N-8
         F[j]=sim_fun.mc_y_belief[2:s.N-1]
         end
     elseif s.tariffsincome==1
 
         #Fix so that code does not break
         sim_fun.mc_Yk_belief[isnan.(sim_fun.mc_Yk_belief)] .= 10000
-        for j=1:N-2
+        for j=1:s.N-2
         F[j]=sim_fun.mc_n[j+1]
         end
-        for j=N-1:2N-4
-        F[j]=sim_fun.mc_y[j+3-N]
+        for j=s.N-1:2*s.N-4
+        F[j]=sim_fun.mc_y[j+3-s.N]
         end
-        for j=2N-3:3N-6
-        F[j]=sim_fun.mc_k[j+5-2N]
+        for j=2*s.N-3:3*s.N-6
+        F[j]=sim_fun.mc_k[j+5-2*s.N]
         end
-        for j=3N-5:4N-8
-        F[j]=sim_fun.mc_y_belief[j+7-3N]
+        for j=3*s.N-5:4*s.N-8
+        F[j]=sim_fun.mc_y_belief[j+7-3*s.N]
         end
-        for j=4N-7:5N-10
-        F[j]=sim_fun.mc_Yk_belief[j+9-4N]
+        for j=4*s.N-7:5*s.N-10
+        F[j]=sim_fun.mc_Yk_belief[j+9-4*s.N]
         end
     end
     return F

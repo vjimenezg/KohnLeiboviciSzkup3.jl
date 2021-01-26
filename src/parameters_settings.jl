@@ -22,6 +22,10 @@
 # =0 if fixed costs denominated in units of labor
 # =1 if fixed costs denominated in units of the final good
     s=merge(s,(fcost_fgoods = 0,
+ #Welfare Graphs
+ # =0 if graphs are to be done directly in Julia (not available yet)
+ # =1 if welfare data is to be exported to matlab
+    graphs_matlab = 1,
 
 # Simulation
     flag_simulate = 0, # flag_simulate = 0, simulates by iterating on measure
@@ -71,7 +75,8 @@ m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),))
 
 
 ##################### Transition Settings #####################
-s=merge(s,(N=20,)) #length of transition
+s=merge(s,(N=20,  #length of transition
+transition_AD=0)) #Autodifferentiation on/off
 
 #Shock to collateral constraint
 θ_old = m.θ

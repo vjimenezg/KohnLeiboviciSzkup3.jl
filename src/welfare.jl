@@ -365,7 +365,11 @@ for j = 1:zbin
         q.losers_bins_10[i,j] = sum(sim_0.measure[aL:aH,pL:pH] .* (q.ind_welfare[aL:aH,pL:pH].<0))/sum(sim_0.measure[aL:aH,pL:pH])
     end
 end
-
+if s.graphs_matlab ==1
+file=matopen("data_welfaregraphs.mat","w")
+write(file,"measure_bins_10",q.measure_bins_10)
+close(file)
+else
 #FROM HERE UNTIL THE END PENDING
 figure(5)
 b1 = bar3(q.measure_bins_10); colorbar
@@ -405,4 +409,6 @@ imagesc(q.winners_bins_10); colorbar
 if sav == 1
         saveas(gcf,'Figures/winners_FF_tau_c_10','epsc')
         saveas(gcf,'Figures/winners_FF_tau_c_10','pdf')
+end
+
 end

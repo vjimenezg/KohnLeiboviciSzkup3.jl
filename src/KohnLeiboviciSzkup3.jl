@@ -21,7 +21,7 @@ using Base
 using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
-using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
+#using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
 #using GMT
 
 # Model files
@@ -149,8 +149,7 @@ end
         end
 @time begin
         if s.GE_end == 1  && s.PE == 0
-            results_GE =
-             nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0),autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
+            results_GE = nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0), autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
             solver=merge(solver,(z=results_GE.zero,))
             mcc_end, m_end, r_end, s_end, sim_end = KLS3_GE_par(solver.z,m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
@@ -182,8 +181,13 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
  wt = zeros(s.N,1),
  ξt = zeros(s.N,1),
  Ykt = zeros(s.N,1),
- Yct = zeros(s.N,1),
- tariffsincomet= zeros(Real,s.N,1)))
+ Yct = zeros(s.N,1)))
+
+    if s.transition_AD == 1
+    m=merge(m,(tariffsincomet = zeros(Real,s.N,1),))
+    else
+    m=merge(m,(tariffsincomet = zeros(s.N,1),))
+    end
 
     if s.tariffsincome == 1
      # Guess
@@ -241,16 +245,15 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
 
  ## STEP 4: Solving for the GE prices and quantities
 @time begin
-        if s.transition_GE== 1
-         # guess
-         Guess=log.(Guess)
-
-         results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess,autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
-
-         mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
+        if s.transition_GE == 1
+            if s.transition_AD == 1
+            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=15, show_trace=s.show_trace_trans)
+            else
+            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=15, show_trace=s.show_trace_trans)
+            end
+            mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
         else
-         Guess=log.(Guess)
-         Prices_sol = Guess
+         Prices_sol = log.(Guess)
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
         end
     end
