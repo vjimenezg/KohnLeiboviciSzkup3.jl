@@ -75,7 +75,7 @@ m=merge(m,(log_z_μ = log(m.z_mean)-(m.log_z_σ^2)*(1/(1-m.log_z_ρ^2))*(1/2),))
 
 
 ##################### Transition Settings #####################
-s=merge(s,(N=20,  #length of transition
+s=merge(s,(N=40,  #length of transition
 transition_AD=0)) #Autodifferentiation on/off
 
 #Shock to collateral constraint
@@ -127,12 +127,12 @@ m=merge(m,(τ_v = hcat(τ_old*ones(1,2),τ_new*ones(1,s.N-2)),))
 
 #Shocks to tariffs
 τ_m_c_old = m.τ_m_c
-τ_m_c_new = 0.375*m.τ_m_c
+τ_m_c_new = 1*m.τ_m_c
 m=merge(m,(τ_m_c_v = hcat(τ_m_c_old*ones(1,1),τ_m_c_new*ones(1,s.N-1)),))
 
 
 τ_m_k_old = m.τ_m_k
-τ_m_k_new = 1*m.τ_m_k
+τ_m_k_new = 0.12
 m=merge(m,(τ_m_k_v = hcat(τ_m_k_old*ones(1,1),τ_m_k_new*ones(1,s.N-1)),))
 
 
@@ -145,12 +145,12 @@ m=merge(m,(τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,s.N-1)),))
 
 s=merge(s,(
 #Productivity
-    z_grid_size = 100, # 100; #75; #250;# Productivity grid size
+    z_grid_size = 150, # 100; #75; #250;# Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; # Curvature parameter to control
                                         # distance across grid points
 
 #Assets
-    a_grid_size = 100,# 100; #150; #250; # Asset grid size
+    a_grid_size = 150,# 100; #150; #250; # Asset grid size
     a_grid_power = 2, #2; #3 # Curvature parameter to control distance across
                              # grid points -- for a>=0 (for a<0, grid spacing is linear)
 

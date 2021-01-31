@@ -890,7 +890,7 @@ guessM=sim.measure
 #Display
 if s.display==1
 
-        print("GE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
+        print("\nGE: Y_MCC= $(sim.mc_y), N_MCC= $(sim.mc_n), A_MCC= $(sim.mc_a), Y_Belief= $(sim.mc_y_belief), K_MCC= $(sim.mc_k), Yk_MCC= $(sim.mc_Yk_belief)")
         print("\n")
         print("\nShare of exporters (all firms):  $(sim.share_x)")
         print("\nExporter domestic sales premium: $(sim.xpremium_sales_d)")

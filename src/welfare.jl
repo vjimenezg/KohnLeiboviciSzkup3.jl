@@ -253,7 +253,7 @@ q.table_prod[6,:] = [q.welfare_avg_losers_lowVP q.welfare_avg_losers_lowP q.welf
 
 
 ### Bins
-sav =0
+sav = 0
 zbin = 5
 abin = 5
 
@@ -370,6 +370,7 @@ file=matopen("data_welfaregraphs.mat","w")
 write(file,"measure_bins_10",q.measure_bins_10)
 close(file)
 else
+
 #FROM HERE UNTIL THE END PENDING
 figure(5)
 b1 = bar3(q.measure_bins_10); colorbar

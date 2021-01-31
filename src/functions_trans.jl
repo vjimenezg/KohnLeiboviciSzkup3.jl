@@ -325,7 +325,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
 
         # Exporters and non-exporters
         sim.share_x[t,1] = sum(measure.*e) # share of exporters
-        sim.share_d[t,1] = sum(measure.*(1 .-e))  #Mass of producers who are non-exporters
+        sim.share_d[t,1] = sum(measure.*(1 .-e))  #share of non-exporters
 
         ## Capital good
         sim.K[t,1] = sum(measure.*k)

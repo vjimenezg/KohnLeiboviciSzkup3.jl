@@ -11,24 +11,28 @@ clearconsole()
 # Dependencies (commented the ones I'm not sure I need yet)
 
 using LinearAlgebra
+using Plots
 using Distributions
-# using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
 using NLsolve # root-finding
-using NamedTupleTools, Parameters # named tuples
-using QuantEcon
+using NamedTupleTools # named tuples
+using QuantEcon #used to generate a markov chain
 using Base
-#using NaNMath
 using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
+
+# using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
 #using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
-#using GMT
+#using GMT #3d histograms (not available yet)
 
 # Model files
 include("tauchen.jl")
 include("parameters_settings.jl")
 include("functions.jl")
 include("functions_trans.jl")
+
+say(what) = run(`osascript -e "say \"$(what)\""`, wait=false)
+#function that lets you know when code finished running
 
 #Step 1: Solve initial steady state
 
@@ -77,7 +81,11 @@ include("functions_trans.jl")
     elseif ge.GE ==0
         mcc_0, m_0, r_0, s_0, sim_0 =KLS3_GE_par(log.(solver.x0),m,s,r)
         solver=merge(solver,(mcc_0=mcc_0,))
+
+         #Testing with MATLAB solver prices
+        #mcc_0_matlabprices, m_0_matlabprices, r_0_matlabprices, s_0_matlabprices, sim_0_matlabprices =KLS3_GE_par(log.([Prices_MATLAB[2,1] Prices_MATLAB[1,1] Prices_MATLAB[3,1] Prices_MATLAB[4,1] Prices_MATLAB[5,1]]),m,s,r)
     end
+say("Initial Steady State Finished - you'd better come and take a look....")
 end
 
 
@@ -147,16 +155,20 @@ end
 
             solver=(x0 = [m.w m.ϕ_h m.ξ m.Pk],)
         end
-@time begin
-        if s.GE_end == 1  && s.PE == 0
-            results_GE = nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0), autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
-            solver=merge(solver,(z=results_GE.zero,))
-            mcc_end, m_end, r_end, s_end, sim_end = KLS3_GE_par(solver.z,m,s,r)
-            solver=merge(solver,(mcc_end=mcc_end,))
-        else
+        @time begin
+            if s.GE_end == 1  && s.PE == 0
+                results_GE = nlsolve((F,x) ->KLS3_GE_par!(F,x,m,s,r),log.(solver.x0), autodiff = :forward, method=s.method_GE, xtol=s.xtol_GE, ftol=s.ftol_GE, show_trace=s.show_trace_GE)
+                solver=merge(solver,(z=results_GE.zero,))
+                mcc_end, m_end, r_end, s_end, sim_end = KLS3_GE_par(solver.z,m,s,r)
+                solver=merge(solver,(mcc_end=mcc_end,))
+            else
             mcc_end, m_end, r_end, s_end, sim_end =KLS3_GE_par(log.(solver.x0),m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
-        end
+
+            #Testing with MATLAB solver prices
+          # mcc_end_matlabprices, m_end_matlabprices, r_0_matlabprices, s_end_matlabprices, sim_end_matlabprices =KLS3_GE_par(log.([Prices_MATLAB[2,end] Prices_MATLAB[1,end] Prices_MATLAB[3,end] Prices_MATLAB[4,end] Prices_MATLAB[5,end]]),m,s,r)
+            end
+        say("Final Steady State Finished - you'd better come and take a look....")
         end
         # Real variables
         sim_end=merge(sim_end,(X_Laspeyres = sum(sim_end.measure.*m_0.ξ.*r_0.pf.*r_end.yf),
@@ -247,15 +259,17 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
 @time begin
         if s.transition_GE == 1
             if s.transition_AD == 1
-            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=15, show_trace=s.show_trace_trans)
+            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
             else
-            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=15, show_trace=s.show_trace_trans)
+            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
             end
-            mc, m, r, sim_fun, rt = KLS3_transition_vec2(results_trans.zero,m,r,s,rt)
+            Prices_sol=results_trans.zero
+            mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
         else
          Prices_sol = log.(Guess)
          mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
         end
+    #say("Transition Finished - you'd better come and take a look....")
     end
 end
 
@@ -265,22 +279,20 @@ end
 include("welfare.jl")
  end
 
-
-
  ## End
 
  if s.save_prices==1
      if s.tariffsincome == 0
-         Prices[1,:] = [m.ϕht[1] exp.(Prices_sol[1:s.N-2]) m.ϕht[s.N]]
-         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4]) m.wt[s.N]]
-         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6]) m.ξt[s.N]]
-         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8]) m.Pkt[s.N]]
+         Prices[1,:] = [m.ϕht[1] exp.(Prices_sol[1:s.N-2])' m.ϕht[s.N]]
+         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4])' m.wt[s.N]]
+         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6])' m.ξt[s.N]]
+         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8])' m.Pkt[s.N]]
      elseif s.tariffsincome == 1
-         Prices[1,:] = [m.Yct[1] exp.(Prices_sol[1:s.N-2]) m.Yct[s.N]]
-         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4]) m.wt[s.N]]
-         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6]) m.ξt[s.N]]
-         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8]) m.Pkt[s.N]]
-         Prices[5,:] = [m.Ykt[1] exp.(Prices_sol[4*s.N-7:end]) m.Ykt[s.N]]
+         Prices[1,:] = [m.Yct[1] exp.(Prices_sol[1:s.N-2])' m.Yct[s.N]]
+         Prices[2,:] = [m.wt[1] exp.(Prices_sol[s.N-1:2*s.N-4])' m.wt[s.N]]
+         Prices[3,:] = [m.ξt[1] exp.(Prices_sol[2*s.N-3:3*s.N-6])' m.ξt[s.N]]
+         Prices[4,:] = [m.Pkt[1] exp.(Prices_sol[3*s.N-5:4*s.N-8])' m.Pkt[s.N]]
+         Prices[5,:] = [m.Ykt[1] exp.(Prices_sol[4*s.N-7:end])' m.Ykt[s.N]]
      end
     @save "KLS3_prices.jld2" Prices
  end
