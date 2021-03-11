@@ -67,10 +67,10 @@ function KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
         for j = 1:s.z_grid_size
 
                 c =  profits[:,j] + asset_income .- a_grid_vec
-                neg_c_indexes = c.<=0 #indices of a' for which consumption<0
+                neg_c_indexes = real(c).<=0 #indices of a' for which consumption<0
                 u = (c.^exponentg)/exponentg + neg_c_indexes*-1e50
                 MM=ones_vec*P[j,:]'
-                v,index_ap = findmax(u + MM*v_pt,dims=2)
+                v,index_ap = findmax(real(u + MM*v_pt),dims=2)
                 v_new[:,j] = v
                 for (i,index) in enumerate(index_ap)
                 ap_ind[i,j] = index[2]
@@ -328,32 +328,32 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         sim.share_d[t,1] = sum(measure.*(1 .-e))  #share of non-exporters
 
         ## Capital good
-        sim.K[t,1] = sum(measure.*k)
+        sim.K[t,1] = sum(real(measure.*k))
         if t>1 && t<N
             measurep =  sim.measure[:,:,t+1]
-            sim.inv_agg[t,1] = sum(measurep.*kp) - (1 .-m.δ_v[t])*sum(measure.*k)
+            sim.inv_agg[t,1] = real(sum(measurep.*kp) - (1 .-m.δ_v[t])*sum(measure.*k))
         elseif t==N #For last period (t=N)
             # We assume that we reached steady state when t=N
             sim.inv_agg[t,1] = m.δ*sim.K[t,1]
         end
 
         sim.I[t,1] = max(sim.inv_agg[t,1],0) #Demand for new investment goods
-        sim.M[t,1] = sum(measure.*mat)
+        sim.M[t,1] = sum(real(measure.*mat))
 
         yd_k = ((pd/(m.Pk*m.ω_h_k)).^(-m.σ)) * (sim.I[t,1] + sim.M[t,1])
         ym_k = ((m.ξ*m.Pm_k*(1+m.τ_m_k)/(m.Pk*m.ω_m_k)).^(-m.σ)) * (sim.I[t,1] + sim.M[t,1])
 
-        sim.Yk[t,1] = (sum(measure.*m.ω_h_k.*(yd_k.^((m.σ-1)/m.σ))) + m.ω_m_k*(ym_k.^((m.σ-1)/m.σ)))^(m.σ/(m.σ-1))
-        sim.Pk[t,1] = (sum(measure.*(m.ω_h_k^m.σ).*(pd.^(1-m.σ))) + (m.ω_m_k^m.σ)*((m.ξ*m.Pm_k*(1+m.τ_m_k)).^(1-m.σ)) )^(1/(1-m.σ))
+        sim.Yk[t,1] = (sum(real(measure.*m.ω_h_k.*(yd_k.^((m.σ-1)/m.σ)))) + m.ω_m_k*(ym_k.^((m.σ-1)/m.σ)))^(m.σ/(m.σ-1))
+        sim.Pk[t,1] = (sum(real(measure.*(m.ω_h_k^m.σ).*(pd.^(1-m.σ)))) + (m.ω_m_k^m.σ)*((m.ξ*m.Pm_k*(1+m.τ_m_k)).^(1-m.σ)) )^(1/(1-m.σ))
 
         ## Consumption good
 
-        sim.C[t,1] = sum(measure.*c)
+        sim.C[t,1] = sum(real(measure.*c))
 
         #yd_c = ((pd/m.ω_h_c).^(-m.σ)) * sim.C[t,1]
-        yd_c = max.(yd - yd_k,0.00001)
+        yd_c = max.(real(yd - yd_k),0.00001)
         ym_c = (m.ξ*m.Pm_c*(1+m.τ_m_c)/(m.ω_m_c)).^(-m.σ) * sim.C[t,1]
-        sim.Yc[t,1] = (sum(measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ))) + m.ω_m_c*(ym_c.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1))
+        sim.Yc[t,1] = (sum(real(measure.*m.ω_h_c.*(yd_c.^((m.σ-1)/m.σ)))) + m.ω_m_c*(ym_c.^((m.σ-1)/m.σ)) )^(m.σ/(m.σ-1))
 
 
         ## ϕ_h
@@ -364,10 +364,10 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         ## Compute price and quantity indexes
 
         #Domestic sales
-         sim.PdYd[t,1] =sum(measure[pd.>0].*(pd[pd.>0].*yd[pd.>0]))
+         sim.PdYd[t,1] =sum(real(measure[real(pd).>0].*(pd[real(pd).>0].*yd[real(pd).>0])))
 
         #Exports
-         sim.PxYx[t,1] = m.ξ*sum(measure[pf.>0].*(pf[pf.>0].*yf[pf.>0]))
+         sim.PxYx[t,1] = m.ξ*sum(real(measure[real(pf).>0].*(pf[real(pf).>0].*yf[real(pf).>0])))
 
          sim.PxYx_USD[t,1] = sim.PxYx[t,1]/m.ξ
 
@@ -383,7 +383,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
 
         #Labor and capital
         sim.FC[t,1] =  sum(measure.*e.*F_mat)
-        sim.N[t,1] = sum(measure.*n)    +((sim.FC[t,1])/m.w)*(1 .-s.fcost_fgoods)
+        sim.N[t,1] = sum(real(measure.*n))    +((sim.FC[t,1])/m.w)*(1 .-s.fcost_fgoods)
 
         ## Market clearing conditions
 
@@ -396,7 +396,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         #Assets
         #This market clearing condition is the result of reformulating the debt market clearing condition
         #In the original model, the sum of debt has to equal zero. Once the model is reformulated, this condition becomes the one below.
-        sim.a_supply[t,1] = sum(measure.*rt[t].a)
+        sim.a_supply[t,1] = sum(real(measure.*rt[t].a))
         sim.a_demand[t,1] = sim.K[t,1]
         #sim.mc_a[t,1] = (1+sim.a_demand[t,1])/(1+sim.a_supply[t,1])-1
 
@@ -451,9 +451,9 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         # Every credit statistic only for tradables
         rt[t]=merge(rt[t],(d = (1+m.r).*(m.Pk_lag*k - rt[t].a),))
 
-        sim.credit[t,1] = sum(measure.*max.(rt[t].d,0)) # only entrepreneurs/firms (for workers r.d is negative)
+        sim.credit[t,1] = sum(real(measure.*max.(real(rt[t].d),0))) # only entrepreneurs/firms (for workers r.d is negative)
         sim.credit_gdp[t,1] = sim.credit[t,1]/sim.GDP[t,1]
-        sim.d_agg[t,1] = sum(measure.*rt[t].d) # for both firms and workers
+        sim.d_agg[t,1] = sum(real(measure.*rt[t].d)) # for both firms and workers
         sim.NFA_GDP[t,1] = -sim.d_agg[t,1]/sim.GDP[t,1]
 
         sim.k_wagebill[t,1] = m.Pk_lag*sim.K[t,1]/(m.w*sim.n_supply[t,1])
@@ -464,7 +464,7 @@ function KLS3_simulate_trans(m,s,rt,Guess)
         sales = sales_d+sales_x
         x_share = sales_x./sales
 
-        sim.x_share_av[t,1] =  sum(filter(!isnan,measure.*e.* x_share)) / sum(measure.*e)
+        sim.x_share_av[t,1] =  sum(filter(!isnan,real(measure.*e.* x_share))) / sum(real(measure.*e))
         # sim.x_share_av[isnan.(sim.x_share_av[t,1])].=1 #Don't know the role of this, but it throws error in Julia given sim.x_share_av is a scalar
 
         if s.extra_results==1
@@ -473,36 +473,36 @@ function KLS3_simulate_trans(m,s,rt,Guess)
             ln_sales_ind = isnan.(ln_sales).==0
             ln_sales_d_ind = isnan.(ln_sales_d).==0
 
-            ln_sales_mean = sum(measure[ln_sales_ind].*ln_sales[ln_sales_ind])
-            sim.ln_sales_sd[t,1] = sqrt.(sum(measure[ln_sales_ind] .* (ln_sales[ln_sales_ind] .- ln_sales_mean).^2 ))
+            ln_sales_mean = sum(real(measure[ln_sales_ind].*ln_sales[ln_sales_ind]))
+            sim.ln_sales_sd[t,1] = sqrt.(sum(real(measure[ln_sales_ind] .* (ln_sales[ln_sales_ind] .- ln_sales_mean).^2)))
 
 
-            ln_sales_d_mean = sum(measure[ln_sales_d_ind] .* ln_sales_d[ln_sales_d_ind])
-            sim.ln_sales_d_sd[t,1] = sqrt.( sum(measure[ln_sales_d_ind] .* (ln_sales_d[ln_sales_d_ind] .- ln_sales_d_mean).^2))
+            ln_sales_d_mean = sum(real(measure[ln_sales_d_ind] .* ln_sales_d[ln_sales_d_ind]))
+            sim.ln_sales_d_sd[t,1] = sqrt.( sum(real(measure[ln_sales_d_ind] .* (ln_sales_d[ln_sales_d_ind] .- ln_sales_d_mean).^2)))
 
-            sales_mean = sum(measure.*sales)
-            sim.sales_sd[t,1] = sqrt.(sum(measure .* (sales .- sales_mean).^2))
+            sales_mean = sum(real(measure.*sales))
+            sim.sales_sd[t,1] = sqrt.(sum(real(measure .* (sales .- sales_mean).^2)))
 
-            sales_d_mean = sum(measure .* sales_d)
-            sim.sales_d_sd[t,1] = sqrt.(sum(measure .* (sales_d .- sales_d_mean).^2))
+            sales_d_mean = sum(real(measure .* sales_d))
+            sim.sales_d_sd[t,1] = sqrt.(sum(real(measure .* (sales_d .- sales_d_mean).^2)))
 
-            sim.sales_avg_nx[t,1] = sum(measure.*(1 .-e).*sales) / sum(measure.*(1 .-e))
-            sim.labor_avg_nx[t,1] = sum(measure.*(1 .-e).*(n)) / sum(measure.*(1 .-e))
+            sim.sales_avg_nx[t,1] = sum(real(measure.*(1 .-e).*sales)) / sum(real(measure.*(1 .-e)))
+            sim.labor_avg_nx[t,1] = sum(real(measure.*(1 .-e).*(n))) / sum(real(measure.*(1 .-e)))
             sim.sales_d_avg_nx[t,1] = sim.sales_avg_nx[t,1]
 
-            sim.sales_avg_x[t,1] = sum(measure.*e.*sales)/ sum(measure.*e)
-            sim.labor_avg_x[t,1] = ((sim.FC[t,1]/m.w)*(1-s.fcost_fgoods) + sum(measure.*e.*(n))) / sum(measure.*e)
+            sim.sales_avg_x[t,1] = sum(real(measure.*e.*sales))/ sum(real(measure.*e))
+            sim.labor_avg_x[t,1] = ((sim.FC[t,1]/m.w)*(1-s.fcost_fgoods) + sum(real(measure.*e.*(n)))) / sum(real(measure.*e))
 
         # These include fixed costs
             sim.labor_tot[t,1] = sim.N[t,1]  # total labor demand for production
-            sim.labor_tot_x[t,1] = (sim.FC[t,1]/m.w)*(1-s.fcost_fgoods)  + sum(measure.*e.*(n))
-            sim.labor_tot_nx[t,1] =  sum(measure.*(1 .-e).*(n))
-            sim.labor_tot_w[t,1] = sum(measure)
+            sim.labor_tot_x[t,1] = (sim.FC[t,1]/m.w)*(1-s.fcost_fgoods)  + sum(real(measure.*e.*(n)))
+            sim.labor_tot_nx[t,1] =  sum(real(measure.*(1 .-e).*(n)))
+            sim.labor_tot_w[t,1] = sum(real(measure))
 
             sim.labor_x_share[t,1] = sim.labor_tot_x[t,1]/sim.labor_tot[t,1]
             sim.labor_nx_share[t,1] = sim.labor_tot_nx[t,1]/sim.labor_tot[t,1]
 
-            sim.sales_d_avg_x[t,1] = sum(measure.*e.*sales_d)/ sum(measure.*e)
+            sim.sales_d_avg_x[t,1] = sum(real(measure.*e.*sales_d))/ sum(real(measure.*e))
 
             sim.xpremium_sales[t,1] = sim.sales_avg_x[t,1]/sim.sales_avg_nx[t,1]
             sim.xpremium_labor[t,1] = sim.labor_avg_x[t,1]/sim.labor_avg_nx[t,1]
@@ -514,25 +514,25 @@ function KLS3_simulate_trans(m,s,rt,Guess)
             sim.sales_sd_mean[t,1] = sim.sales_sd[t,1] /  sales_mean
             sim.sales_d_sd_mean[t,1] = sim.sales_d_sd[t,1] /  sales_d_mean
 
-            labor_mean= sum(measure.*(n+ (e.*F_mat./m.w )*(1-s.fcost_fgoods)))
-            labor_sd=sqrt.(sum(measure.*( n+ (e.*F_mat./m.w)*(1-s.fcost_fgoods) .- labor_mean ).^2))
-            sim.labor_sd_mean[t,1] = labor_sd /  labor_mean
+            labor_mean= sum(real(measure.*(n+ (e.*F_mat./m.w )*(1-s.fcost_fgoods))))
+            labor_sd=sqrt.(sum(real(measure.*( n+ (e.*F_mat./m.w)*(1-s.fcost_fgoods) .- labor_mean ).^2)))
+            sim.labor_sd_mean[t,1] = labor_sd / labor_mean
 
 
            # Average productivity
-            sim.avg_productivity1[t,1] = ((sum(measure.*(rt[t].z).^(m.sigma-1)))/sum(measure) ).^(1/(m.σ - 1))
-            sim.avg_productivity2[t,1] =  sum(measure.*sales.* rt[t].z) / sum(measure .* sales)
-            sim.avg_productivity3[t,1] =  sum(measure.*sales_d.* rt[t].z) / sum(measure .* sales_d )
+            sim.avg_productivity1[t,1] = ((sum(real(measure.*(rt[t].z).^(m.sigma-1))))/sum(measure) ).^(1/(m.σ - 1))
+            sim.avg_productivity2[t,1] =  sum(real(measure.*sales.* rt[t].z)) / sum(real(measure .* sales))
+            sim.avg_productivity3[t,1] =  sum(real(measure.*sales_d.* rt[t].z)) / sum(real(measure .* sales_d ))
         end
 
 
     ## Real Statistics
     #Real GDP, Real Exports and Real Domestic Sales
 
-        sim.X_Laspeyres[t,1] = sum(measure.*m.ξt[1].*rt[1].pf.*rt[t].yf)
-        sim.D_Laspeyres[t,1] = sum(measure.*rt[1].pd.*rt[t].yd)
-        sim.Sales_Laspeyres[t,1] = sum(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1].*rt[1].pf.*rt[t].yf))
-        sim.GDP_Laspeyres[t,1] = sum(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1]*rt[1].pf.*rt[t].yf-mat*m.Pkt[1]))
+        sim.X_Laspeyres[t,1] = sum(real(measure.*m.ξt[1].*rt[1].pf.*rt[t].yf))
+        sim.D_Laspeyres[t,1] = sum(real(measure.*rt[1].pd.*rt[t].yd))
+        sim.Sales_Laspeyres[t,1] = sum(real(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1].*rt[1].pf.*rt[t].yf)))
+        sim.GDP_Laspeyres[t,1] = sum(real(measure.*(rt[1].pd.*rt[t].yd+m.ξt[1]*rt[1].pf.*rt[t].yf-mat*m.Pkt[1])))
         sim.Imports[t,1] = sim.PmYm[t,1]
         sim.Imports_C[t,1] = m.ξ*(1+m.τ_m_c)*m.Pm_c*ym_c
         sim.Imports_K[t,1] =  m.ξ*(1+m.τ_m_k)*m.Pm_k*ym_k
@@ -542,8 +542,8 @@ function KLS3_simulate_trans(m,s,rt,Guess)
 
      ## Solution-related statistics
 
-        sim.a_min_share[t,1] = sum(measure[1,:])
-        sim.a_max_share[t,1] = sum(measure[end,:])
+        sim.a_min_share[t,1] = sum(real(measure[1,:]))
+        sim.a_max_share[t,1] = sum(real(measure[end,:]))
 
     end
 return sim,rt
@@ -755,6 +755,8 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
 
         ## Shocks
 
+        global m
+
         # shock to interest rate
         m=merge(m,(r = m.rv[t],
         r_lag = m.rv[t-1],
@@ -783,8 +785,7 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
         τ_m_c = m.τ_m_c_v[t],
         τ_m_k = m.τ_m_k_v[t],
 
-
-        ## GE prices
+        ## GE prices ##
 
         ϕ_h = ϕhguess[t],
         ϕ_h_lag = ϕhguess[t-1],
@@ -798,14 +799,14 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
         Pk = Pkguess[t],
         Pk_lag = Pkguess[t-1]))
 
-        #Fixed costs
+        ## Fixed costs $$
         if  s.fcost_fgoods==0 # If in units of labor
             m=merge(m,(F = m.w*m.F_base,))
          else
             m=merge(m,(F = m.F_base,))
         end
 
-      # Tariff income (initialized to 0)
+      ## Tariff income (initialized to 0) ##
         if s.tariffsincome == 1
 
             m=merge(m,(Yk = Ykguess[t],
@@ -820,7 +821,7 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
             m.tariffsincomet[t]=m.tariffsincome
         end
 
-        ## Solve static and dynamic problems
+        ## Solve static and dynamic problems ##
 
         # Period 2
         if t==2
@@ -834,19 +835,17 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
         F_mat = r_temp.e*m.F,
         profits=m.w .+ m.tariffsincome .+ r_temp.e.*r_temp.π_x .+ (1 .-r_temp.e).*r_temp.π_nx))
         rt[t]=r_temp
-
     end
 
     rt = KLS3_dynamicproblem_trans_vec_t(m,s,r,rt)
 
-    #ap_ind_tr_Julia_v3_1=zeros(100,100,20)
+    #ap_ind_tr_Julia=zeros(100,100,20)
     #for t=1:20
-    #    ap_ind_tr_Julia_v3_1[:,:,t]=rt[t].ap_ind
+        #ap_ind_tr_Julia[:,:,t]=rt[t].ap_ind
     #end
-    #file=matopen("ap_ind_tr_Julia_v3_1.mat","w")
-    #write(file,"ap_ind_tr_Julia_v3_1",ap_ind_tr_Julia_v3_1)
+    #file=matopen("ap_ind_tr_Julia.mat","w")
+    #write(file,"ap_ind_tr_Julia",ap_ind_tr_Julia)
     #close(file)
-
 
     #         #Value function
     #         vp=rt[t+1].v,
@@ -857,9 +856,7 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
     #     end
 
     if s.flag_simulate == 0
-
         sim_fun, rt = KLS3_simulate_trans(m,s,rt,Guess)
-
     elseif s.flag_simulate == 1
 
         # THIS DOESN'T WORK (NO FUNCTION KLS3_simulate_shock_trans available, didn't translate the save/load either)
@@ -891,9 +888,7 @@ function KLS3_transition_vec2(Guess,m,r,s,rt)
         #Fix so that code does not break
         sim_fun.mc_Yk_belief[isnan.(sim_fun.mc_Yk_belief)] .= 10000
 
-
         mc = [sim_fun.mc_n[2:s.N-1]' sim_fun.mc_y[2:s.N-1]' sim_fun.mc_k[2:s.N-1]' sim_fun.mc_y_belief[2:s.N-1]' sim_fun.mc_Yk_belief[2:s.N-1]']'
-
     end
 
     return mc, m, r, sim_fun, rt

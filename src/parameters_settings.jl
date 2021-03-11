@@ -132,7 +132,7 @@ m=merge(m,(τ_m_c_v = hcat(τ_m_c_old*ones(1,1),τ_m_c_new*ones(1,s.N-1)),))
 
 
 τ_m_k_old = m.τ_m_k
-τ_m_k_new = 0.12
+τ_m_k_new = m.τ_m_k #0.27 #0.12
 m=merge(m,(τ_m_k_v = hcat(τ_m_k_old*ones(1,1),τ_m_k_new*ones(1,s.N-1)),))
 
 

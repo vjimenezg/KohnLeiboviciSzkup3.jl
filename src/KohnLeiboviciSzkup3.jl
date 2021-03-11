@@ -20,6 +20,7 @@ using Base
 using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
+using NaNMath
 
 # using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
 #using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
@@ -223,12 +224,11 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
          #m.ϕht[s.N]=m_0.ϕ_h
          m.wt[s.N]=m_0.w
          m.ξt[s.N]=m_0.ξ
-         m.Pkt[s.N]=m_end.Pk
+         m.Pkt[s.N]=m_end.Pk #This was in the MATLAB code, is it a typo and should it be m_0.Pk as the rest of the prices?
          m.Yct[s.N] = m_0.Yc
          m.Ykt[s.N] = m_0.Yk
 
         end
-
 
      period2_change = 0.5
 
@@ -258,18 +258,20 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
  ## STEP 4: Solving for the GE prices and quantities
 @time begin
         if s.transition_GE == 1
+            Guess=log.(Guess)
             if s.transition_AD == 1
-            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
+                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
             else
-            results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),log.(Guess), method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
+                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
             end
             Prices_sol=results_trans.zero
             mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
         else
-         Prices_sol = log.(Guess)
-         mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
+            Prices_sol = log.(Guess)
+            mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
+            #mc_matlab, m_matlab, r_matlab, sim_fun_matlab, rt_matlab = KLS3_transition_vec2(Prices_trans_MATLAB,m,r,s,rt)
         end
-    #say("Transition Finished - you'd better come and take a look....")
+    say("Transition Finished - you'd better come and take a look....")
     end
 end
 

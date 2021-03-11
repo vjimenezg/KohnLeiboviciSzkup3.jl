@@ -94,7 +94,12 @@ function KLS3_staticproblem(m,s,r)
     #Unconstrained
 
         # marginal cost
-        r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
+
+        #r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* (max.(m.Pk/m.α_m,0).^m.α_m) .* (max.(m.w/((1-m.α)*(1-m.α_m)),0).^((1-m.α)*(1-m.α_m))) .* (max.(m.rtilde_u./(m.α*(1-m.α_m)),0).^(m.α*(1-m.α_m))),))
+
+        #no fix (max)
+        r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m).^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
+
 
         r=merge(r,(k_x_u = (m.α*(1-m.α_m)./m.rtilde_u).*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
         n_x_u = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
@@ -118,7 +123,10 @@ function KLS3_staticproblem(m,s,r)
 
     #Constrained
         if m.θ<1+m.r
-            r=merge(r,(rtilde_x_c = (((1 ./r.k_const) .* m.α * (1-m.α_m) * const_σ * ϕ_x) .* ((r.μ_u .* m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ))).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
+            #r=merge(r,(rtilde_x_c = max.(((1 ./r.k_const) .* m.α * (1-m.α_m) * const_σ * ϕ_x) .* ((r.μ_u .* max.(m.rtilde_u,0).^(-m.α*(1-m.α_m))).^(1-m.σ)),0).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
+
+            #no fix(max)
+            r=merge(r,(rtilde_x_c = (((1 ./r.k_const) .* m.α * (1-m.α_m) * const_σ * ϕ_x) .* ((r.μ_u .* (m.rtilde_u).^(-m.α*(1-m.α_m))).^(1-m.σ))).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
 
             r=merge(r,(μ_x_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))).* ((r.rtilde_x_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
@@ -132,7 +140,7 @@ function KLS3_staticproblem(m,s,r)
             pf_x_c = m.σ/(m.σ-1)*m.τ/m.ξ.*r.μ_x_c))
 
             #Solution
-                r.const_x .= r.k_const .< r.k_x_u
+                r.const_x .= r.k_const .< real(r.k_x_u)
                 r.k_x[r.const_x] .= r.k_const[r.const_x]
                 r.n_x[r.const_x] .= r.n_x_c[r.const_x]
                 r.m_x[r.const_x] .= r.m_x_c[r.const_x]
@@ -152,7 +160,10 @@ function KLS3_staticproblem(m,s,r)
         ϕ_nx = ϕ_h
 
     #Unconstrained
-        r=merge(r,(μ_u = (1 ./r.z_grid_mat) * ((m.Pk/m.α_m)^m.α_m) * ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) * ((m.rtilde_u/(m.α*(1-m.α_m)))^(m.α*(1-m.α_m))),))
+        #r=merge(r,(μ_u = (1 ./r.z_grid_mat) * (max.(m.Pk/m.α_m,0)^m.α_m) * (max.(m.w/((1-m.α)*(1-m.α_m)),0).^((1-m.α)*(1-m.α_m))) * (max.(m.rtilde_u/(m.α*(1-m.α_m)),0).^(m.α*(1-m.α_m))),))
+
+        #no fix(max)
+        r=merge(r,(μ_u = (1 ./r.z_grid_mat) * ((m.Pk/m.α_m)^m.α_m) * ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) * ((m.rtilde_u/(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
         r=merge(r,(k_nx_u = (m.α*(1-m.α_m)/m.rtilde_u)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
         n_nx_u = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_nx*(r.μ_u.^(1-m.σ)),
@@ -176,7 +187,10 @@ function KLS3_staticproblem(m,s,r)
 
     #Constrained
         if m.θ<1+m.r
-            r=merge(r,(rtilde_nx_c = ( ((1 ./r.k_const) * m.α * (1-m.α_m) * const_σ * ϕ_nx) .* ((r.μ_u * m.rtilde_u.^(-m.α*(1-m.α_m))).^(1-m.σ)) ).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
+            #r=merge(r,(rtilde_nx_c = max.(((1 ./r.k_const) * m.α * (1-m.α_m) * const_σ * ϕ_nx) .* ((r.μ_u * max.(m.rtilde_u,0).^(-m.α*(1-m.α_m))).^(1-m.σ)),0).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
+
+            #no fix (max)
+            r=merge(r,(rtilde_nx_c = (((1 ./r.k_const) * m.α * (1-m.α_m) * const_σ * ϕ_nx) .* ((r.μ_u * (m.rtilde_u).^(-m.α*(1-m.α_m))).^(1-m.σ))).^(1/(1-m.α*(1-m.α_m)*(1-m.σ))),))
 
             r=merge(r,(μ_nx_c = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m)^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((r.rtilde_nx_c./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
@@ -190,7 +204,7 @@ function KLS3_staticproblem(m,s,r)
             r=merge(r,(pf_nx_c = zeros(size(r.pd_nx_c)),))
 
             #Solution
-            r.const_nx .= r.k_const .< r.k_nx_u
+            r.const_nx .= r.k_const .< real(r.k_nx_u)
             r.k_nx[r.const_nx] .= r.k_const[r.const_nx]
             r.n_nx[r.const_nx] .= r.n_nx_c[r.const_nx]
             r.m_nx[r.const_nx] .= r.m_nx_c[r.const_nx]
@@ -207,7 +221,7 @@ function KLS3_staticproblem(m,s,r)
 
     ## Export decision
         r=merge(r,(e=BitArray(undef,size(r.k_nx_u)),))
-        r.e .= r.π_x .>= r.π_nx
+        r.e .= real(r.π_x) .>= real(r.π_nx)
 
       #r=merge(r,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = #nothing, pd_x_c = nothing,  pf_x_c = nothing))
       # r=merge(r,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
