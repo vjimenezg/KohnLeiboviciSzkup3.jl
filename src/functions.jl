@@ -80,8 +80,8 @@ function KLS3_staticproblem(m,s,r)
         #Objects common for X and NX
         cap_gain = (1-m.Pk/m.Pk_lag)
         const_σ = ((m.σ-1)/m.σ)^m.σ
-        m=merge(m,(rtilde_u = ((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag,))
-
+        m=merge(m,(rtilde_u = max.(((m.r+m.δ)+(1-m.δ)*cap_gain)*m.Pk_lag,0.00000001),))
+        #display("rtilde_u=$(m.rtilde_u)")
         if m.θ<1+m.r
             r=merge(r,(k_const = (1/m.Pk_lag)*((1+m.r)/(1+m.r-m.θ))*r.a_grid_mat,))
         else
@@ -98,8 +98,10 @@ function KLS3_staticproblem(m,s,r)
         #r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* (max.(m.Pk/m.α_m,0).^m.α_m) .* (max.(m.w/((1-m.α)*(1-m.α_m)),0).^((1-m.α)*(1-m.α_m))) .* (max.(m.rtilde_u./(m.α*(1-m.α_m)),0).^(m.α*(1-m.α_m))),))
 
         #no fix (max)
+
         r=merge(r,(μ_u = (1 ./r.z_grid_mat) .* ((m.Pk/m.α_m).^m.α_m) .* ((m.w/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m))),))
 
+        #μ_u_b = (1 ./r.z) .* ((Pk_b/m.α_m).^m.α_m) .* ((w_b/((1-m.α)*(1-m.α_m))).^((1-m.α)*(1-m.α_m))) .* ((m.rtilde_u./(m.α*(1-m.α_m))).^(m.α*(1-m.α_m)))
 
         r=merge(r,(k_x_u = (m.α*(1-m.α_m)./m.rtilde_u).*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),
         n_x_u = ((1-m.α)*(1-m.α_m)/m.w)*const_σ*ϕ_x*(r.μ_u.^(1-m.σ)),

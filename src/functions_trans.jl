@@ -640,7 +640,7 @@ function KLS3_transition_vec2!(F,Guess,m,r,s,rt)
         end
 
         ## Solve static and dynamic problems
-
+        #display("Period=$t")
         # Period 2
         if t==2
             r_temp = KLS3_staticproblem_period2_altTiming(m,s,r_initial,rt)

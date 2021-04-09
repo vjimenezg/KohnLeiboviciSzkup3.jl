@@ -165,12 +165,22 @@ end
             else
             mcc_end, m_end, r_end, s_end, sim_end =KLS3_GE_par(log.(solver.x0),m,s,r)
             solver=merge(solver,(mcc_end=mcc_end,))
+            end
+            say("Final Steady State Finished - you'd better come and take a look....")
+        end
+
+            #Saving prices
+            #file=matopen("Prices_Julia_2ndSS.mat","w")
+            #write(file,"Prices_Julia_2SS",solver.z)
+            #close(file)
 
             #Testing with MATLAB solver prices
-          # mcc_end_matlabprices, m_end_matlabprices, r_0_matlabprices, s_end_matlabprices, sim_end_matlabprices =KLS3_GE_par(log.([Prices_MATLAB[2,end] Prices_MATLAB[1,end] Prices_MATLAB[3,end] Prices_MATLAB[4,end] Prices_MATLAB[5,end]]),m,s,r)
-            end
-        say("Final Steady State Finished - you'd better come and take a look....")
-        end
+            #file = matopen("Prices_MATLAB_2ndSS.mat")
+            #Prices_MATLAB_2SS=read(file, "Prices_MATLAB_2SS")
+            #close(file)
+            #mcc_end_matlab, m_end_matlab, r_0_matlab, s_end_matlab, sim_end_matlab =KLS3_GE_par(Prices_MATLAB_2SS,m,s,r)
+
+
         # Real variables
         sim_end=merge(sim_end,(X_Laspeyres = sum(sim_end.measure.*m_0.ξ.*r_0.pf.*r_end.yf),
         D_Laspeyres = sum(sim_end.measure.* r_0.pd.*r_end.yd),
@@ -260,20 +270,27 @@ rt[s.N] = merge(r_end,(measure=sim_end.measure,))
         if s.transition_GE == 1
             Guess=log.(Guess)
             if s.transition_AD == 1
-                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, autodiff = :forward, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
+                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, autodiff = :forward, method=s.method_trans, factor=0.0001, autoscale=false, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans,store_trace=true)
             else
-                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, method=s.method_trans, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans)
+                results_trans = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Guess, method=s.method_trans, factor=1, autoscale=true, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=40, show_trace=s.show_trace_trans,store_trace=true)
             end
             Prices_sol=results_trans.zero
             mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
         else
             Prices_sol = log.(Guess)
             mc, m, r, sim_fun, rt = KLS3_transition_vec2(Prices_sol,m,r,s,rt)
-            #mc_matlab, m_matlab, r_matlab, sim_fun_matlab, rt_matlab = KLS3_transition_vec2(Prices_trans_MATLAB,m,r,s,rt)
         end
     say("Transition Finished - you'd better come and take a look....")
     end
 end
+
+#Trying with MATLAB prices
+#file = matopen("Prices_Transition_MATLAB_Julia2ndSS.mat")
+#Prices_sol_MATLAB=read(file, "Prices_sol")
+#close(file)
+#results_trans_matlab = nlsolve((F,x) -> KLS3_transition_vec2!(F,x,m,r,s,rt),Prices_sol_MATLAB, method=s.method_trans, factor=0.001, autoscale=false, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=40, show_trace=s.show_trace_trans,store_trace=true)
+#Prices_sol_MATLABGuess=results_trans_matlab.zero
+#mc_matlab, m_matlab, r_matlab, sim_fun_matlab, rt_matlab = KLS3_transition_vec2(Prices_sol_MATLABGuess,m,r,s,rt)
 
 
  ## Welfare analysis
