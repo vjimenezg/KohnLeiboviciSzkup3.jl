@@ -145,12 +145,12 @@ m=merge(m,(τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,s.N-1)),))
 
 s=merge(s,(
 #Productivity
-    z_grid_size = 100, # 100; #75; #250;# Productivity grid size
+    z_grid_size = 200, # 100; #75; #250;# Productivity grid size
     z_grid_power =1/2, # 1/2; #1/2; #1; # Curvature parameter to control
                                         # distance across grid points
 
 #Assets
-    a_grid_size = 100,# 100; #150; #250; # Asset grid size
+    a_grid_size = 200,# 100; #150; #250; # Asset grid size
     a_grid_power = 2, #2; #3 # Curvature parameter to control distance across
                              # grid points -- for a>=0 (for a<0, grid spacing is linear)
 

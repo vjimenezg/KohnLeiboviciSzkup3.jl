@@ -5,7 +5,6 @@ module KohnLeiboviciSzkup3
 # No Credit, No Gain: Trade Liberalization Dynamics, Production Inputs, and Financial Development
 # Kohn, Leibovici, Szkup 2020
 ####################################################
-
 clearconsole()
 
 # Dependencies (commented the ones I'm not sure I need yet)
@@ -21,7 +20,9 @@ using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
 using NaNMath
-
+using Profile #used for benchmarking purposes
+using OwnTime #used for benchmarking purposes
+using Threads
 # using Delimited Files, DataFrames, DataFramesMeta, CSV, CSVFiles, JSON # results caching
 #using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
 #using GMT #3d histograms (not available yet)

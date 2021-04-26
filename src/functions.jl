@@ -35,7 +35,6 @@
 
         for j=1:numZ #Old productivity state
             PP=P[j,:]
-
             #aa_v=ap_ind[:,j]
             for i=1:numA #Old asset state
                 #aa=ap_ind[i,j]
@@ -349,8 +348,8 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             for j = 1:s.z_grid_size
 
                 v_pp = m.β*z_P[j,:]'*v_p
-                for i = 1:s.a_grid_size
-
+                Threads.@threads for i = 1:s.a_grid_size
+                    @inbounds begin
                     c1 =  profits[i,j] .+ a_grid[i].*(1 +m.r) .- a_grid
                     neg_c1_indexes = c1.<=0 #indices of a' for which consumption<0
                     u = (c1.^exponentg)./exponentg .+ neg_c1_indexes.*-1e50
@@ -359,13 +358,14 @@ function KLS3_dynamicproblem(m,s,r,guessV)
 
                       v_new[i,j] = v
                     ap_ind[i,j]=index_ap[2]
-
+                    end
                 end
             end
-            for j =1:s.z_grid_size
+            Threads.@threads for j =1:s.z_grid_size
+                @inbounds begin
                 ap[:,j]=r.a_grid[ap_ind[:,j]]
+                end
             end
-
             # Accelerator
 
             # Consumption and utility
@@ -374,11 +374,11 @@ function KLS3_dynamicproblem(m,s,r,guessV)
             u = ((c).^(1-m.γ))./(1-m.γ)
 
             for g=1:s.ac_iter
+
                 for j = 1:s.z_grid_size
                     v_new[:,j] = u[:,j] .+ (m.β * z_P[j,:]'*v_new[ap_ind[:,j],:]')'
 
                 end
-
 
             end
 
