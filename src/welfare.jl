@@ -1,4 +1,4 @@
-## Welfare analysis
+## Welfare analysis. INCOMPLETE, MISSING THE 3D GRAPHICS [afaik, the best way to make it in Julia is through Generic Mapping Tools (using GMT.jl)
 
 q=(v0_transition = rt[2].v,
 q.v0_transition_t3 = rt[3].v,
