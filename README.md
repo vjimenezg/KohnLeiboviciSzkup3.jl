@@ -34,7 +34,7 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
 
 2. Download and Install [Atom](https://atom.io/) (you can also use another text editor that supports Julia, but Atom is recommended)
 
-3. In Atom, follow the instructions to [install Juno](https://docs.junolab.org/latest/man/installation/#.-Install-Juno) and similarly, install the language-julia package.
+3. In Atom, follow the instructions to [install Juno](https://docs.junolab.org/latest/man/installation/#.-Install-Juno) (**Optional:** in a similar fashion, install the language-julia package).
 
 4. Open the [Julia REPL through Atom] (https://docs.junolab.org/latest/man/basic_usage/) and install the package. To do this, enter package mode with `]` (note that this cannot be copy-pasted on OSX; you need to type it to enter the REPL mode) and run
 
