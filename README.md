@@ -36,7 +36,7 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
 
 3. In Atom, follow the instructions to [install Juno](https://docs.junolab.org/latest/man/installation/#.-Install-Juno) (**Optional:** in a similar fashion, install the language-julia package).
 
-4. Open the [Julia REPL through Atom] (https://docs.junolab.org/latest/man/basic_usage/) and install the package. To do this, enter package mode with `]` (note that this cannot be copy-pasted on OSX; you need to type it to enter the REPL mode) and run
+4. Open the [Julia REPL through Atom](https://docs.junolab.org/latest/man/basic_usage/) and install the package. To do this, enter package mode with `]` (note that this cannot be copy-pasted on OSX; you need to type it to enter the REPL mode) and run
 
     ```julia
     add https://github.com/vjimenezg/KohnLeiboviciSzkup3.jl.git
