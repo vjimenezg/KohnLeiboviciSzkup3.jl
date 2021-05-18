@@ -10,21 +10,21 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
 
 
 ---
-### Directory of the code
+### Code directory
 
-* **[/code](/code)** contains all of the code used to compute the numerical results presented in the paper, given parameter values. It comprises the following:
+* **[/src](/src)** contains all the code used to compute the numerical results presented in the paper, given parameter values (calibration is currently only in MATLAB and available upon request). It comprises the following:
 
-1. **[/code/KLS3.jl](/code/KLS3.jl)** is the main script
+1. **[/src/KLS3.jl](/src/KLS3.jl)** is the main script
 
-2. **[/code/parameters_settings.jl](/code/parameters_settings.jl)** contains the parametrization and settings (including a tauchen function that discretizes the productivity shocks process
+2. **[/src/parameters_settings.jl](/src/parameters_settings.jl)** contains the parametrization and settings (including a tauchen function that discretizes the productivity shocks process
 
-3. **[/code/functions.jl](/code/functions.jl)** contains all the functions needed to compute the steady states (KLS3_measure, KLS3_staticproblem, KLS3_dynamicproblem, KLS3_simulate, KL3_GE_par!, KLS3_GE_par)
+3. **[/src/functions.jl](/src/functions.jl)** contains all the functions needed to compute the steady states (KLS3_measure, KLS3_staticproblem, KLS3_dynamicproblem, KLS3_simulate, KL3_GE_par!, KLS3_GE_par)
 
-4. **[/code/functions_trans.jl](/code/functions_trans.jl)** contains all the additional functions needed to compute the transition between two steady states (KLS3_measure_trans, KLS3_staticproblem_period2_altTiming, KLS3_dynamicproblem_trans_vec_t, KLS3_simulate_trans, KLS3_transition_vec2!, KLS3_transition_vec2)
+4. **[/src/functions_trans.jl](/src/functions_trans.jl)** contains all the additional functions needed to compute the transition between two steady states (KLS3_measure_trans, KLS3_staticproblem_period2_altTiming, KLS3_dynamicproblem_trans_vec_t, KLS3_simulate_trans, KLS3_transition_vec2!, KLS3_transition_vec2)
 
-5. **[/code/graphs.jl](/code/graphs.jl)** contains the code to generate the 2D figures in the paper
+5. **[/src/graphs.jl](/src/graphs.jl)** contains the code to generate the 2D figures in the paper
 
-6. **[/code/welfare.jl](/code/welfare.jl)** contains all the code related to the welfare analysis (**INCOMPLETE**, missing the 3D graphs).
+6. **[/src/welfare.jl](/src/welfare.jl)** contains all the code related to the welfare analysis (**INCOMPLETE**, missing the 3D graphs).
 
 
 ---
