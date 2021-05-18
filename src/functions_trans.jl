@@ -520,11 +520,11 @@ end
 function KLS3_transition_vec2!(F,Guess,p,p_o_t,rt)
 @unpack N, ω_h_c, σ, ω_h_k,rv,Pfv,Yfv,θ_v,β_v,δ_v,τ_v,τ_x_v,τ_m_c_v,τ_m_k_v,F_base,ω_m_k,ω_m_c,Pm_c,τ_m_c,τ_m_k,tariffsincome,Pm_k = p #See comment at the beginning of KL3_measure_trans
 
-##IMP: Uncomment iff using LeastSquaresOptim solver for the transition (transform vector of guess into standard matrix form)
-
-#Guess1=copy(Guess)
-#Guess=hcat(Guess1[1:N-2],Guess1[N-1:2*N-4],Guess1[2*N-3:3*N-6],Guess1[3*N-5:4*N-8],Guess1[4*N-7:5*N-10])
-
+##Transform vector of guess into standard matrix form (used for LeastSquaresOptim solver)
+if s.solver_LM==1
+Guess1=copy(Guess)
+Guess=hcat(Guess1[1:N-2],Guess1[N-1:2*N-4],Guess1[2*N-3:3*N-6],Guess1[3*N-5:4*N-8],Guess1[4*N-7:5*N-10])
+end
 
 	wguess = [p_o_t.wt[1] exp.(Guess[N-1:2N-4])' p_o_t.wt[N]]
 	ξguess = [p_o_t.ξt[1] exp.(Guess[2N-3:3N-6])' p_o_t.ξt[N]]
@@ -637,12 +637,6 @@ function KLS3_transition_vec2!(F,Guess,p,p_o_t,rt)
 
 
 
-	# A fix so that the code does not break [PENDING: TEST IF THEY ARE REALLY NEEDED]
-    sim_fun.mc_n[isnan.(sim_fun.mc_n)] .= 10000
-    sim_fun.mc_y[isnan.(sim_fun.mc_y)] .= 10000
-    sim_fun.mc_y_belief[isnan.(sim_fun.mc_y_belief)] .= 10000
-    sim_fun.mc_y[isnan.(sim_fun.mc_y)] .= 10000
-
     # Market clearing conditions
 
     if s.tariffsincome==0
@@ -659,10 +653,6 @@ function KLS3_transition_vec2!(F,Guess,p,p_o_t,rt)
         F[j]=sim_fun.mc_y_belief[2:N-1]
         end
     elseif s.tariffsincome==1
-
-        #Fix so that code does not break [PENDING: TEST IF THEY ARE REALLY NEEDED]
-        sim_fun.mc_Yk_belief[isnan.(sim_fun.mc_Yk_belief)] .= 10000
-
         for j=1:N-2
         F[j]=sim_fun.mc_n[j+1]
         end
@@ -809,24 +799,12 @@ function KLS3_transition_vec2(Guess,p,p_o_t,rt)
         sim_fun, rt = KLS3_simulate_trans(p,p_o_t,rt,Guess)
     end
 
-
-    # A fix so that the code does not break [PENDING: TEST IF THEY ARE REALLY NEEDED]
-    sim_fun.mc_n[isnan.(sim_fun.mc_n)] .= 10000
-    sim_fun.mc_y[isnan.(sim_fun.mc_y)] .= 10000
-    sim_fun.mc_y_belief[isnan.(sim_fun.mc_y_belief)] .= 10000
-    sim_fun.mc_y[isnan.(sim_fun.mc_y)] .= 10000
-
     # Market clearing conditions
 
 
     if s.tariffsincome==0
          mc = [sim_fun.mc_n[2:N-1]' sim_fun.mc_y[2:N-1]' sim_fun.mc_k[2:N-1]' sim_fun.mc_y_belief[2:N-1]']'
-
     elseif s.tariffsincome==1
-
-        #Fix so that code does not break [PENDING: TEST IF THEY ARE REALLY NEEDED]
-        sim_fun.mc_Yk_belief[isnan.(sim_fun.mc_Yk_belief)] .= 10000
-
         mc = [sim_fun.mc_n[2:N-1]' sim_fun.mc_y[2:N-1]' sim_fun.mc_k[2:N-1]' sim_fun.mc_y_belief[2:N-1]' sim_fun.mc_Yk_belief[2:N-1]']'
     end
 

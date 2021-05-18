@@ -209,7 +209,7 @@ function KLS3_staticproblem(p_o,p)
         p_o=merge(p_o,(e=BitArray(undef,size(p_o.k_nx_u)),))
         p_o.e .= real(p_o.π_x) .>= real(p_o.π_nx)
 
-      p_o=merge(p_o,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = #nothing, pd_x_c = nothing,  pf_x_c = nothing))
+      p_o=merge(p_o,(k_const = nothing, n_x_c = nothing, m_x_c = nothing, yd_x_c = nothing, yf_x_c = nothing, pd_x_c = nothing,  pf_x_c = nothing))
       p_o=merge(p_o,(k_x_u = nothing,   n_x_u = nothing, m_x_u = nothing, yd_x_u = nothing, yf_x_u = nothing, pd_x_u = nothing, pf_x_u = nothing))
       p_o=merge(p_o,(n_nx_c = nothing, m_nx_c = nothing, yd_nx_c = nothing, yf_nx_c = nothing, pd_nx_c = nothing, pf_nx_c = nothing))
       p_o=merge(p_o,(k_nx_u = nothing, n_nx_u = nothing, m_nx_u = nothing, yd_nx_u = nothing, yf_nx_u = nothing, pd_nx_u = nothing, pf_nx_u = nothing))
@@ -620,34 +620,21 @@ function KLS3_GE_par!(F,x,p,s)
          p_o=merge(p_o,(F = F_base,))
      end
 
-     #Static problems for tradable and nontradable sectors
-         p_o_static=KLS3_staticproblem(p_o,p)
-         p_o=merge(p_o,p_o_static)
+    #Static problems for tradable and nontradable sectors
+    p_o_static=KLS3_staticproblem(p_o,p)
+    p_o=merge(p_o,p_o_static)
 
-    # PENDING (PERSISTENT)
-    # persistent guessV
-    # if isempty(guessV)
-    #    guessV=p_o.π_nx
-    # end
-    guessV=copy(p_o.π_nx)
 
     #Dynamic problem and simulation (No sunk costs)
+    global guessV=copy(p_o.π_nx)
+
     p_o_dynamic=KLS3_dynamicproblem(p_o,p,s,guessV)
     p_o=merge(p_o,p_o_dynamic)
-    guessV = copy(p_o.v)
 
-    # PENDING (PERSISTENT)
-    # persistent guessM
-    # if isempty(guessM)
-    #    guessM=vcat(p_o.z_π',zeros(s.a_grid_size-1,s.z_grid_size)) #Initialize
-    # end
-
-    guessM=vcat(z_π',zeros(a_grid_size-1,z_grid_size))
+    global guessM=vcat(z_π',zeros(a_grid_size-1,z_grid_size))
 
     sim,p_o1 = KLS3_simulate(p_o,p,s,guessM)
     p_o=merge(p_o,p_o1)
-
-    guessM=sim.measure
 
 #Market clearing conditions
     if s.tariffsincome==0
@@ -761,28 +748,17 @@ end
      p_o_static=KLS3_staticproblem(p_o,p)
      p_o=merge(p_o,p_o_static)
 
-# persistent guessV
-# if isempty(guessV)
-#    guessV=p_o.π_nx
-# end
 guessV=copy(p_o.π_nx)
 
 #Dynamic problem and simulation (No sunk costs)
 p_o_dynamic=KLS3_dynamicproblem(p_o,p,s,guessV)
 p_o=merge(p_o,p_o_dynamic)
-guessV = copy(p_o.v)
-
-# persistent guessM
-# if isempty(guessM)
-#    guessM=vcat(z_π',zeros(a_grid_size-1,z_grid_size)) #Initialize
-# end
 
 guessM=vcat(z_π',zeros(a_grid_size-1,z_grid_size))
 
 sim,p_o1 = KLS3_simulate(p_o,p,s,guessM)
 p_o=merge(p_o,p_o1)
 
-guessM=sim.measure
 
 #Market clearing conditions
     if s.tariffsincome==0

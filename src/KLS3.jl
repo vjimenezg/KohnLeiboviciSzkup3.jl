@@ -13,14 +13,14 @@ using LinearAlgebra
 using Distributions
 using Plots # used to plot graphs
 using Parameters # used to create named tuples
-using NLsolve # (multivariable) root-finder [main solver used]
+using NLsolve # (multivariable) root-finder [main solver]
 using LeastSquaresOptim # alternative solver [transition only]
-using QuantEcon #used to generate a markov chain (large package, maybe convenient to manually code the markov chain and get rid of it, it may amount to a marginal gain in efficiency)
+using QuantEcon #used to generate a markov chain (large, maybe is's convenient to manually code the m.c. and get rid of the package, it may amount to a marginal gain in efficiency)
 using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)
 
-##Benchmarking packages
+### Benchmarking packages
 #using Profile
 #using TimerOutputs.jl # allows to print nicely formatted tables with the timing of different sections of the code
 
@@ -83,6 +83,9 @@ say(what) = run(`osascript -e "say \"$(what)\""`, wait=false)
     say("Initial Steady State Finished - you'd better come and take a look....")
 end
 
+#clearing previously defined global vars (so they don't retain their values when computing the 2nd SS)
+guessM=nothing
+guessV=nothing
 
     if s.tariffsincome_PE_flag==1
         s=settings_default(tariffsincome_PE = 1) #note that here what you do is instantiate "setting_default" as before but changing the default value of tariffsincome_PE (instead of changing the value in the previous instantiation, which cannot be done)
@@ -175,6 +178,9 @@ end
             say("Final Steady State Finished - you'd better come and take a look....")
         end
 
+        #clearing previously defined global vars
+        guessV=nothing
+        guessM=nothing
         # Real variables
         sim_end=merge(sim_end,(X_Laspeyres = sum(sim_end.measure.*p_o_0.ξ.*p_o_0.pf.*p_o_end.yf),
         D_Laspeyres = sum(sim_end.measure.* p_o_0.pd.*p_o_end.yd),
@@ -264,32 +270,34 @@ rt[p.N] = merge(p_o_end,(measure=sim_end.measure,))
 
 optim_trans(F,x)=KLS3_transition_vec2!(F,x,p,p_o_t,rt) #"instantiating" the objective functions with the previously specified values of the parameters/pre-allocations (in order to use it as an argument for the solvers below)
 
-#using NLsolve (Trust Region Dogleg Algorithm)
 @time begin
-        if s.transition_GE == 1
+        if s.transition_GE == 1 && s.solver_LM==0
             if s.transition_AD == 1
+                #using NLsolve (Trust Region Dogleg Algorithm)
                 results_trans = nlsolve(optim_trans,log.(Guess), autodiff = :forward, method=s.method_trans, factor=1, autoscale=false, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans,store_trace=true)
             else
                 results_trans = nlsolve(optim_trans,log.(Guess), method=s.method_trans, factor=1, autoscale=true, xtol=s.xtol_trans, ftol=s.ftol_trans,iterations=s.MaxIter_trans, show_trace=s.show_trace_trans,store_trace=true)
             end
             Prices_sol=results_trans.zero
-            mc1, p_o_t1, sim_fun1, rt1 = KLS3_transition_vec2(Prices_sol,p,p_o_t,rt)
+            mc, p_o_t, sim_fun, rt = KLS3_transition_vec2(Prices_sol,p,p_o_t,rt)
+        elseif s.transition_GE == 1 && s.solver_LM==1
+            #using LeastSquaresOptim #(L-M algorithm)
+            # #[This solver allows the use of the Levenberg-Marquardt algorithm, which seems to be better at computing the transition (it throws out almost the same solution as matlab's, while NLsolve throws a much noiser one; this changes if the guess is closer to the solution, though). Unfortunately, it takes around 10x the time NLsolve takes] IMPORTANT: If using this solver, uncomment first lines of function KLS3_transition_vec2!
+
+            if s.transition_AD == 1
+                solver_LSO=optimize!(LeastSquaresProblem(x = vec(log.(Guess)), f! = optim_trans, output_length = length(vec(log.(Guess))), autodiff = :forward), x_tol=s.xtol_trans, f_tol=s.ftol_trans,iterations=s.MaxIter_trans,LevenbergMarquardt())
+            else
+                solver_LSO=optimize!(LeastSquaresProblem(x = vec(log.(Guess)), f! = optim_trans, output_length = length(vec(log.(Guess))), autodiff = :forward), x_tol=s.xtol_trans, f_tol=s.ftol_trans,iterations=s.MaxIter_trans,LevenbergMarquardt())
+            end
+
+            Prices_sol=hcat(solver_LSO.minimizer[1:p.N-2],solver_LSO.minimizer[p.N-1:2*p.N-4],solver_LSO.minimizer[2*p.N-3:3*p.N-6],solver_LSO.minimizer[3*p.N-5:4*p.N-8],solver_LSO.minimizer[4*p.N-7:5*p.N-10])
+            mc_lso, p_o_t_lso, sim_fun_lso, rt_lso = KLS3_transition_vec2(Prices_sol,p,p_o_t,rt)
         else
             Prices_sol = log.(Guess)
-            mc1, p_o_t1, sim_fun1, rt1 = KLS3_transition_vec2(Prices_sol,p,p_o_t,rt)
+            mc, p_o_t, sim_fun, rt = KLS3_transition_vec2(Prices_sol,p,p_o_t,rt)
         end
     say("Transition Finished - you'd better come and take a look....")
-    end
-
-    #using LeastSquaresOptim #(L-M algorithm)
-    # #[This solver allows the use of the Levenberg-Marquardt algorithm, which seems to be better at computing the transition (it throws out almost the same solution as matlab's, while NLsolve throws a much noiser one; this changes if the guess is closer to the solution, though). Unfortunately, it takes around 10x the time NLsolve takes] IMPORTANT: If using this solver, uncomment first lines of function KLS3_transition_vec2!
-
-
-    # @time begin
-    #     solver_LSO=optimize!(LeastSquaresProblem(x = vec(log.(Guess)), f! = optim_trans, output_length = length(vec(log.(Guess))), autodiff = :forward), x_tol=s.xtol_trans, f_tol=s.ftol_trans,iterations=s.MaxIter_trans,LevenbergMarquardt())
-    #     Prices_sol_LSO=hcat(solver_LSO.minimizer[1:p.N-2],solver_LSO.minimizer[p.N-1:2*p.N-4],solver_LSO.minimizer[2*p.N-3:3*p.N-6],solver_LSO.minimizer[3*p.N-5:4*p.N-8],solver_LSO.minimizer[4*p.N-7:5*p.N-10])
-    #     mc_lso, p_o_t_lso, sim_fun_lso, rt_lso = KLS3_transition_vec2(Prices_sol_LSO,p,p_o_t,rt)
-    # end
+end
 
 end
 

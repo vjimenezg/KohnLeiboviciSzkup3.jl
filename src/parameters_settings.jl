@@ -66,7 +66,7 @@ r = 0.06,
 tariffsincome = 0.0,
 log_z_ρ = 0.9,
 log_z_μ = log(z_mean)-(log_z_σ^2)*(1/(1.0-log_z_ρ^2))*(1/2), #Normalize average productivity to 1, log_z_μ is the mean of log_z
-N=60,
+N=20,
 θ_old = θ,
 θ_new = θ,
 θ_v = hcat(θ_old*ones(1,2),θ_new*ones(1,N-2)),
@@ -97,12 +97,12 @@ Yfv = hcat(Yf_old*ones(1,1),Yf_new*ones(1,N-1)),
 τ_x_old = τ_x,
 τ_x_new = 1*τ_x,
 τ_x_v = hcat(τ_x_old*ones(1,1),τ_x_new*ones(1,N-1)),
-z_grid_size = 200, # 100; #75; #250;# Productivity grid size
+z_grid_size = 100, # 100; #75; #250;# Productivity grid size
 z_grid_power =1/2, # 1/2; #1/2; #1; # Curvature parameter to control
                                     # distance across grid points
 
 #Assets
-a_grid_size = 200,# 100; #150; #250; # Asset grid size
+a_grid_size = 100,# 100; #150; #250; # Asset grid size
 a_grid_power = 2, #2; #3 # Curvature parameter to control distance across
                          # grid points -- for a>=0 (for a<0, grid spacing is linear)
 
@@ -133,6 +133,7 @@ settings_default = @with_kw (dir=pwd(),
 dir_results = string(dir,"/","results", "/"),
 tariffsincome = 1, # = 0 if don't give tariffs income back # = 1 give tariffs income back (we need additional guess)
 tariffsincome_PE_flag=1,
+solver_LM=0, # = 1 if LeastSquaresOptim with Levenberg-Marquardt Algorithm, = 0 if NLsolve with Trust Region Algorithm
 tariffsincome_PE = 0,
 GE =1, # =0 if partial equilibrium (inital SS)
        # =1 if general equilibrium (initial SS)
