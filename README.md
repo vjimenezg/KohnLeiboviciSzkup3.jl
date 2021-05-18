@@ -14,7 +14,7 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
 
 * **[/src](/src)** contains all the code used to compute the numerical results presented in the paper, given parameter values (calibration is currently only in MATLAB and available upon request). It comprises the following:
 
-1. **[/src/KLS3.jl](/src/KLS3.jl)** is the main script
+1. **[/src/KohnLeiboviciSzkup3.jl](/src/KohnLeiboviciSzkup3.jl)** is the main script
 
 2. **[/src/parameters_settings.jl](/src/parameters_settings.jl)** contains the parametrization and settings (including a tauchen function that discretizes the productivity shocks process
 
@@ -52,4 +52,3 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
       ```julia
       ] activate .; instantiate
       ```
-      
