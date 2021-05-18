@@ -5,9 +5,8 @@ module KohnLeiboviciSzkup3 #introduces a new global scope
 # No Credit, No Gain: Trade Liberalization Dynamics, Production Inputs, and Financial Development
 # Kohn, Leibovici, Szkup 2021
 ####################################################
-clearconsole()
 
-# Dependencies (packages used, add/download them before calling)
+# Dependencies (packages used)
 using Base
 using LinearAlgebra
 using Distributions
@@ -15,7 +14,7 @@ using Plots # used to plot graphs
 using Parameters # used to create named tuples
 using NLsolve # (multivariable) root-finder [main solver]
 using LeastSquaresOptim # alternative solver [transition only]
-using QuantEcon #used to generate a markov chain (large, maybe is's convenient to manually code the m.c. and get rid of the package, it may amount to a marginal gain in efficiency)
+using QuantEcon #used to generate a markov chain
 using Dates #used to save the date of different workspaces
 using JLD2 #allows to save the workspace or individual variables in .jld2 format (akin to matlab's .mat)
 using MAT #allows to save the workspace or individual variables in .mat format (useful for matlab comparisons and the welfare graphs)

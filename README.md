@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/vjimenezg/KohnLeiboviciSzkup3.jl.svg?branch=master)](https://travis-ci.com/vjimenezg/KohnLeiboviciSzkup3.jl)
 [![Coverage](https://codecov.io/gh/vjimenezg/KohnLeiboviciSzkup3.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/vjimenezg/KohnLeiboviciSzkup3.jl)
 
-This repository contains the complete code used to compute equilibrium steady-state and transition dynamics of the model in [No Credit, No Gain: Trade Liberalization Dynamics, Production Inputs, and Financial Development](https://drive.google.com/file/d/1oDM3Ru-gkF8I4HTdgxnBAiA2BNXvwDfG/view?usp=sharing), by [David Kohn](https://sites.google.com/site/davidkohn16/home), [Fernando Leibovici](https://www.fernandoleibovici.com/) & [Michal Szkup](https://sites.google.com/view/michal-szkup).
+This repository contains the complete code used to compute equilibrium steady-state and transition dynamics of the model in [No Credit, No Gain: Trade Liberalization Dynamics, Production Inputs, and Financial Development](https://drive.google.com/file/d/1B5bEuBKMDsWujJyqwKZ0anWoIrCZHltw/view), by [David Kohn](https://sites.google.com/site/davidkohn16/home), [Fernando Leibovici](https://www.fernandoleibovici.com/) & [Michal Szkup](https://sites.google.com/view/michal-szkup).
 
 
 The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxkYXZpZGtvaG4xNnxneDo3OTBlOTc0ZTExM2VhZTc5) contains all the derivations of the model.
