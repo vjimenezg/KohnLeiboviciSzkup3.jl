@@ -22,9 +22,9 @@ The [Online Appendix](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXV
 
 4. **[/src/functions_trans.jl](/src/functions_trans.jl)** contains all the additional functions needed to compute the transition between two steady states (KLS3_measure_trans, KLS3_staticproblem_period2_altTiming, KLS3_dynamicproblem_trans_vec_t, KLS3_simulate_trans, KLS3_transition_vec2!, KLS3_transition_vec2)
 
-5. **[/src/graphs.jl](/src/graphs.jl)** contains the code to generate the 2D figures in the paper
+5. **[/src/graphs.jl](/src/graphs.jl)** contains the code to generate the graphs of the model's simulations in the paper (figure 3, 4 and 6)
 
-6. **[/src/welfare.jl](/src/welfare.jl)** contains all the code related to the welfare analysis (**INCOMPLETE**, missing the 3D graphs).
+6. **[/src/welfare.jl](/src/welfare.jl)** contains all the code related to the welfare analysis (**INCOMPLETE**, missing the 3D graphs)
 
 
 ---
