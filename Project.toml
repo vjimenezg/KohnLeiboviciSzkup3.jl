@@ -18,6 +18,7 @@ QuantEcon = "fcd29c91-0bd7-5a09-975d-7ac3f643a60c"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
+QuantEcon = "0.16"
 julia = "1"
 
 [extras]
